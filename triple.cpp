@@ -5,7 +5,7 @@
 #include <queue>
 #include "include/triple.h"
 
-
+/*
 
 struct TrieNode* seek(struct TrieNode *root, struct Triple triple, int offset){
     struct TrieNode *pCrawl = root;
@@ -138,8 +138,115 @@ void print_p(struct TrieNode* root){
 
     }   
 }
+*/
+
+namespace mapExt{
+    template<typename myMap>
+    std::vector<typename myMap::key_type> Keys(const myMap& m){
+        std::vector<typename myMap::key_type> r;
+        r.reserve(m.size());
+        for (const auto&kvp : m){
+            r.push_back(kvp.first);
+        }
+        return r;
+    }
+
+    template<typename myMap>
+    bool check_key(const myMap map, int key){
+        return (map.find(key) == map.end()) ? false : true;
+    }
+}
+
+bool check_elm(std::vector<int> v, int key){
+    return (std::find(v.begin(), v.end(), key) == v.end()) ? false : true;
+}
+
+void get_all_keys(std::unordered_map<int, struct l2*> map){
+    std::vector<int> keys;
+    keys.reserve(map.size());
+
+    for(auto kv : map) {
+        keys.push_back(kv.first);
+        std::cout << kv.first <<std::endl;
+    } 
+}
+
+
+void insert(struct root* root, struct Triple triple){
+    struct l1* l1;
+    struct l2* l2;
+    struct l3* l3;
+
+    if(!mapExt::check_key(root->s_root, triple.spo[0]))
+        root->s_root[triple.spo[0]] = new struct l0();
+    struct l0* l0 = root->s_root[triple.spo[0]];
+
+    if(!mapExt::check_key(l0->s_children, triple.spo[1])){
+        l1 = new struct l1();
+        l0->s_children[triple.spo[1]] = l1;
+        if(!mapExt::check_key(root->p_root, triple.spo[1]))
+            root->p_root[triple.spo[1]] = l1;
+    }
+    else{
+        l1 = l0->s_children[triple.spo[1]];
+    }
+    
+    if(!mapExt::check_key(l1->s_children, triple.spo[2])){
+        l2 = new struct l2();
+        l1->s_children[triple.spo[2]] = l2;
+        if(mapExt::check_key(root->p_root, triple.spo[1]))
+            root->p_root[triple.spo[1]] = l1;
+        else
+            l1->p_children[triple.spo[2]] = l2;
+        if(!mapExt::check_key(root->o_root, triple.spo[2]))
+            root->o_root[triple.spo[2]] = l2;
+    }
+    else{
+        l2 = l1->s_children[triple.spo[2]];
+    }
+
+    if(!mapExt::check_key(l2->p_children, triple.spo[0])){
+        l3 = new struct l3();
+        l2->p_children[triple.spo[0]] = l3;
+        if(mapExt::check_key(root->o_root, triple.spo[2]))
+            root->o_root[triple.spo[2]] = l2;
+        else
+            l2->o_children[triple.spo[0]] = l3;
+    }
+    else{
+        l3 = l2->p_children[triple.spo[0]];
+    }
+    l3->o_children.push_back(triple.spo[0]);
+    
+}
 
 int main(){
+    struct Triple t1 = {2, 3, 2};
+
+    struct root* root = new struct root();
+    struct test{
+        std::unordered_map<int, std::vector<test*>> list;
+    };
+    struct test* a = new struct test();
+    struct test* b = new struct test();
+    a->list[0].push_back(b);
+
+    insert(root, t1);
+
+    struct l0* l0 = root->s_root[2];
+    struct l1* l1 = root->s_root[2]->s_children[3];
+    struct l2* l2 = root->s_root[2]->s_children[3]->s_children[2];
+    struct l3* l3 = root->s_root[2]->s_children[3]->s_children[2]->o_children[2];
+
+    std::cout << mapExt::check_key(root->s_root, 2) << std::endl;
+    std::cout << mapExt::check_key(root->s_root[2]->s_children, 3) << std::endl;
+    std::cout << mapExt::check_key(root->s_root[2]->s_children[3]->s_children, 2) << std::endl;
+    std::cout << mapExt::check_key(root->s_root[2]->s_children[3]->s_children[2]->o_children, 2) << std::endl;
+
+    //std::cout << mapExt::check_key(l1, 3) << std::endl;    
+    //std::cout << mapExt::check_key(l2, 2) << std::endl;    
+    //std::cout << mapExt::check_key(l3, 2) << std::endl;   
+    /*
     struct Triple t1 = {2, 3, 2};
     struct Triple t2 = {2, 3, 4};
     struct Triple t3 = {4, 3, 2};
@@ -169,6 +276,6 @@ int main(){
     std::cout << "================print p root===============" << std::endl;
     //insert_p(root, t1);
     print_p(p_root);    
-
+    */
     return 0;
 }
