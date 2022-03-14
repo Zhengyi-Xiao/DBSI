@@ -7,72 +7,63 @@
 
 #include "include/triple.h"
 
-namespace mapExt{
-    template<typename myMap>
-    std::vector<typename myMap::key_type> Keys(const myMap& m){
-        std::vector<typename myMap::key_type> r;
-        r.reserve(m.size());
-        for (const auto&kvp : m){
-            r.push_back(kvp.first);
-        }
-        return r;
-    }
 
-    template<typename myMap>
-    bool check_key(const myMap map, int key){
-        return (map.find(key) == map.end()) ? false : true;
-    }
+bool check_key(const std::unordered_map<int, struct TrieNode*> map, int key){
+    return (map.find(key) == map.end()) ? false : true;
 }
 
-void insert(struct Trie* root, struct Triple triple){
+// add a new triple into the trie
+void add(struct Trie* root, struct Triple triple){
     int s = triple.s; int p = triple.p; int o = triple.o;
     bool l3Flag = false; bool l4Flag = false;
 
     // create root for s
-    if(!mapExt::check_key(root->s_root->children, s))
+    if(!check_key(root->s_root->children, s))
         root->s_root->children[s] = new struct TrieNode();
     struct TrieNode* l0 = root->s_root->children[s];
 
     // create root for p
-    if(!mapExt::check_key(l0->children, p))
+    if(!check_key(l0->children, p))
         l0->children[p] = new struct TrieNode();
     struct TrieNode* l1 = l0->children[p];
     
-    if(!mapExt::check_key(root->p_root->children, p)){
+    //  if p_root does not contain p, we want create a new node for p 
+    if(!check_key(root->p_root->children, p)){
         root->p_root->children[p] = l1;
         l1->children[o] = new struct TrieNode();
-    }
+    } // otherwise, it is already there, and there are two cases we need to consider
     else{
         l1->children[o] = new struct TrieNode();
-        if(!mapExt::check_key(root->p_root->children, o))
+        // when o is not in the p_root, we want set a pointer from p_root from o to l2
+        if(!check_key(root->p_root->children[p]->children, o))
             root->p_root->children[p]->children[o] = l1->children[o];
-        else
+        else // otherwise, it is a special case we need to take care later on
             l3Flag = true;
     }
     struct TrieNode* l2 = l1->children[o];
 
-    if(!mapExt::check_key(root->o_root->children, o)){
+    // next layer follows above
+    if(!check_key(root->o_root->children, o)){
         root->o_root->children[o] = l2;
         l2->children[s] = new struct TrieNode();
     }
     else{
         l2->children[s] = new struct TrieNode();
-        if(!mapExt::check_key(root->o_root->children, s))
+        if(!check_key(root->o_root->children[o]->children, s))
             root->o_root->children[o]->children[s] = l2->children[s];
         else
             l4Flag = true;
     }
     struct TrieNode* l3 = l2->children[s];
-    
+    // last layer included
     l3->children[p] = new struct TrieNode();
-    struct TrieNode* l4 = l3->children[p];
     
-    if(l3Flag){
+    if(l3Flag) // special case to handle (s,p,o) where p and o appear before
         root->p_root->children[p]->children[o]->children[s] = l3;
-    }
-    if(l4Flag){
-        root->o_root->children[o]->children[s]->children[p] = l4;
-    }
+
+    if(l4Flag)
+        root->o_root->children[o]->children[s]->children[p] = l3->children[p];
+
 }
 
 void get_all_keys(std::unordered_map<int, struct TrieNode*> map){
@@ -116,56 +107,15 @@ int main(){
     root->p_root = new struct TrieNode();
     root->o_root = new struct TrieNode();
 
-    insert(root, t1);
-    insert(root, t2);
-    insert(root, t3);
-    //insert(root, t4);
-    //insert(root, t5);
-    //insert(root, t6);
+    add(root, t1);
+    add(root, t2);
+    add(root, t3);
+    add(root, t4);
+    add(root, t5);
+    add(root, t6);
 
     print(root->s_root);
-    //get_all_keys(root->p_root->children);
+    //get_all_keys(root->o_root->children[4]->children[2]->children);
 
-    /*
-    get_all_keys(root->s_root->children);
-    get_all_keys(root->s_root->children[2]->children);
-    get_all_keys(root->s_root->children[2]->children[3]->children);
-    get_all_keys(root->s_root->children[2]->children[3]->children[2]->children);
-    get_all_keys(root->s_root->children[2]->children[3]->children[2]->children[2]->children);
-   */
-    //std::cout << mapExt::check_key(l1, 3) << std::endl;    
-    //std::cout << mapExt::check_key(l2, 2) << std::endl;    
-    //std::cout << mapExt::check_key(l3, 2) << std::endl;   
-    /*
-    struct Triple t1 = {2, 3, 2};
-    struct Triple t2 = {2, 3, 4};
-    struct Triple t3 = {4, 3, 2};
-    struct Triple t4 = {2, 3, 5};
-    struct Triple t5 = {4, 3, 5};
-
-    TrieNode* s_root = new TrieNode();
-    TrieNode* p_root = new TrieNode();
-    TrieNode* o_root = new TrieNode();
-
-    Trie* root = new Trie();
-    root->s_root = s_root;
-    root->p_root = p_root;
-    root->o_root = o_root;
-
-
-    insert_s(root, t1);
-    //insert_s(root, t2);
-    //insert_s(root, t3);
-    //insert_s(root, t4);
-    //insert_s(root, t5);
-
-    std::cout << "===============" << std::endl;
-
-    print_s(s_root);
-
-    std::cout << "================print p root===============" << std::endl;
-    //insert_p(root, t1);
-    print_p(p_root);    
-    */
     return 0;
 }

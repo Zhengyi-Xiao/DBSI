@@ -3,6 +3,7 @@
 #include <vector>
 #include <unordered_map>
 
+
 struct Triple {
     int s,p,o;
 } Triple;
