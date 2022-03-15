@@ -7,7 +7,6 @@
 
 #include "include/triple.h"
 
-
 bool check_key(const std::unordered_map<int, struct TrieNode*> map, int key){
     return (map.find(key) == map.end()) ? false : true;
 }
@@ -66,6 +65,30 @@ void add(struct Trie* root, struct Triple triple){
 
 }
 
+struct State {int i, j, k; };
+
+State make();
+
+void next(State&);
+
+bool isDone(State const&);
+
+void helper(struct TrieNode* current, int depth, int* output){
+    if(depth >= 3){
+        std::cout << output[0] << output[1] << output[2] << std::endl;
+        return;
+    }
+    for(auto kv : current->children){
+        output[depth] = kv.first;
+        helper(kv.second, depth + 1, output);
+    }
+}
+
+void evaluate(struct Trie* root, struct Query query){
+    int output[3];
+    helper(root->s_root, 0, output);
+}
+
 void get_all_keys(std::unordered_map<int, struct TrieNode*> map){
     std::vector<int> keys;
     keys.reserve(map.size());
@@ -114,7 +137,10 @@ int main(){
     add(root, t5);
     add(root, t6);
 
-    print(root->s_root);
+    struct Query q1 = {2, X, Y};
+    evaluate(root, q1);
+    
+    //print(root->s_root);
     //get_all_keys(root->o_root->children[4]->children[2]->children);
 
     return 0;
