@@ -7,6 +7,15 @@
 
 #include "include/triple.h"
 
+void get_all_keys(std::unordered_map<int, struct TrieNode*> map){
+    std::vector<int> keys;
+    keys.reserve(map.size());
+    for(auto kv : map) {
+        keys.push_back(kv.first);
+        std::cout << kv.first << "  ";
+    } 
+}
+
 bool check_key(const std::unordered_map<int, struct TrieNode*> map, int key){
     return (map.find(key) == map.end()) ? false : true;
 }
@@ -65,37 +74,44 @@ void add(struct Trie* root, struct Triple triple){
 
 }
 
-struct State {int i, j, k; };
 
-State make();
+State make(struct Trie* root, struct Query query){
+    struct State state;
+    state.start = 1;
+    state.result[0] = query.s;
+    state.result[1] = -1;
+    state.result[2] = -1;
+    state.iter[0] = root->s_root->children.begin();
 
-void next(State&);
+    return state;
+}
 
-bool isDone(State const&);
-
-void helper(struct TrieNode* current, int depth, int* output){
+void helper(struct TrieNode* current, int depth, struct State& state){
     if(depth >= 3){
-        std::cout << output[0] << output[1] << output[2] << std::endl;
+        std::cout << state.result[0] << state.result[1] << state.result[2] << std::endl;
         return;
     }
-    for(auto kv : current->children){
-        output[depth] = kv.first;
-        helper(kv.second, depth + 1, output);
+    for(;state.iter[depth-1]!=current->children.end(); state.iter[depth-1]++){
+        state.result[depth] = state.iter[depth-1]->first;
+        state.iter[depth] = state.iter[depth-1]->second->children.begin();
+        std::cout << state.result[0] << state.result[1] << std::endl;
+        //helper(state.iter[depth]->second, depth + 1, state);
+        return;
     }
 }
+
+void next(struct Trie* root, State& state){
+    int output[3];
+    helper(root->s_root->children[state.result[0]], state.start, state);
+}
+
+
 
 void evaluate(struct Trie* root, struct Query query){
     int output[3];
-    helper(root->s_root, 0, output);
-}
+    std::unordered_map<int, struct TrieNode*>::iterator kv = root->s_root->children.begin();
 
-void get_all_keys(std::unordered_map<int, struct TrieNode*> map){
-    std::vector<int> keys;
-    keys.reserve(map.size());
-    for(auto kv : map) {
-        keys.push_back(kv.first);
-        std::cout << kv.first << "  ";
-    } 
+    //helper(root->s_root, 0, output, kv);
 }
 
 void print(struct TrieNode* root){
@@ -138,7 +154,10 @@ int main(){
     add(root, t6);
 
     struct Query q1 = {2, X, Y};
-    evaluate(root, q1);
+    struct State state = make(root, q1);
+    
+    next(root, state);
+    next(root, state);
     
     //print(root->s_root);
     //get_all_keys(root->o_root->children[4]->children[2]->children);
