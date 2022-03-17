@@ -3,17 +3,19 @@
 #include <string.h>
 #include <iostream>
 
-#include "include/triple.h"
 #include "include/table.h"
+#include "HashTable.cpp"
 
 Table::Table(){
     this->table = new std::vector<int*>;
     this->num_element = 0;
-    this->table->resize(16);
+    this->table->resize(8);
     this->size = 2;
     this->Is.resize(8);
     this->Ip.resize(8);
     this->Io.resize(8);
+    this->Isp = new HashTable();
+    this->Iop = new HashTable();
 }
 
 void Table::resize(){
@@ -58,7 +60,7 @@ void Table::insert(struct Triple t){
     std::memcpy(concatenated+8, (char*)&t.o, sizeof(int));    
     int i = XXH32(concatenated, 12, 0) % this->size;
 
-    if(this->num_element/this->size > loading_factor)
+    if((float)this->num_element/this->size > loading_factor)
         this->resize();
 
     int* T = this->table->at(i);
@@ -77,6 +79,8 @@ void Table::insert(struct Triple t){
     update_Ix(this->Is, t.s, i+1);
     update_Ix(this->Ip, t.p, i+1);
     update_Ix(this->Io, t.o, i+1);
+    this->Isp->insert(t.s, t.p, i+1);
+    this->Iop->insert(t.o, t.p, i+1);
 
     this->table->at(i) = T_new;
     ++this->num_element;
@@ -122,6 +126,7 @@ int main(){
     table->print_I(table->Is);
     table->print_I(table->Ip);
     table->print_I(table->Io);
-
+    table->Iop->print_I();
+    table->Isp->print_I();
     return 0;
 }

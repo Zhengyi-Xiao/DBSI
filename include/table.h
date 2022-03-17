@@ -8,6 +8,7 @@
 #include "triple.h"
 #include "xxh3.h"
 #include "table.h"
+#include "HashTable.h"
 
 #define loading_factor 0.6
 
@@ -28,7 +29,7 @@ public:
     int num_element;
     std::vector<int*>* table;
     std::vector<int> Is, Ip, Io;
-
+    HashTable* Isp,* Iop;
 };
 
 #endif
