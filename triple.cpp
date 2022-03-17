@@ -131,7 +131,7 @@ void print(struct TrieNode* root){
     }   
 }
 
-
+/*
 int main(){
     struct Triple t1 = {2, 3, 2};
     struct Triple t2 = {2, 3, 4};
@@ -164,3 +164,4 @@ int main(){
 
     return 0;
 }
+*/

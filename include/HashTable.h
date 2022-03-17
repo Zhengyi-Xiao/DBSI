@@ -8,10 +8,10 @@
 class HashTable{
 
 public:
-	HashTable();
+	HashTable(int tuple_type);
 
-	void insert(int s, int p, int value);
-	int search(int s, int p);
+	void insert(int s, int p, int o, int value);
+	int search(int s, int p, int o);
 	void resize();
 	void print_I();
 	int getCapacity() const;
@@ -22,6 +22,7 @@ public:
 	std::vector<std::vector<int> > *table;				//pointer to the hash table
     int num_element;		//number of items in the hash table
     int capacity;			//maximum length of the hash table	
+	int tuple_type;
 };
 
 #endif

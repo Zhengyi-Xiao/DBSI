@@ -4,116 +4,132 @@
 #include <iostream>
 
 #include "include/table.h"
-#include "HashTable.cpp"
+#include "include/HashTable.h"
+//#include "HashTable.cpp"
+#define Nsp         3
+#define Np          4
+#define Nop         5
+#define EndOfNode   -1
+#define Negect      -1
 
 Table::Table(){
     this->table = new std::vector<int*>;
-    this->num_element = 0;
-    this->table->resize(8);
-    this->size = 2;
-    this->Is.resize(8);
-    this->Ip.resize(8);
-    this->Io.resize(8);
-    this->Isp = new HashTable();
-    this->Iop = new HashTable();
+    this->Is.resize(4);
+    this->Ip.resize(4);
+    this->Io.resize(4);
+    this->Isp = new HashTable(2);
+    this->Iop = new HashTable(2);
+    this->Ispo = new HashTable(3);
 }
 
 void Table::resize(){
-    std::vector<int*>* copy = new std::vector<int*>;
-    int new_size = this->table->size() << 1;
-    copy->resize(new_size);
-    char concatenated[12];
-    
-    for(int j = 0; j < this->size; j++){
-        if(this->table->at(j) != NULL){
-            std::memcpy(concatenated, (char*)&this->table->at(j)[0], sizeof(int));
-            std::memcpy(concatenated+4, (char*)&this->table->at(j)[1], sizeof(int));
-            std::memcpy(concatenated+8, (char*)&this->table->at(j)[2], sizeof(int));    
-            int i = XXH32(concatenated, 12, 0) % new_size;
-            int* T = copy->at(i);
-
-            while(T != NULL){
-                i = (i + 1) % new_size;
-                T = copy->at(i);
-            }
-            copy->at(i) = this->table->at(j);      
-        }
-    }
-    this->size = new_size;
-    delete this->table;
-    this->table = copy;
+    this->Is.resize(this->table->size() << 2);
+    this->Ip.resize(this->table->size() << 2);
+    this->Io.resize(this->table->size() << 2);
 }
 
-void Table::update_Ix(std::vector<int>& vec, int key, int value){
-    if(key > vec.size()){
-        vec.resize(vec.size()<<1);
+void Table::update_Isp(struct Triple t){
+    if(this->Is[t.s] == 0){
+        this->Is[t.s] = this->table->size();
+        this->Isp->insert(t.s, t.p, Negect, this->table->size());
     }
-    if(vec[key] == 0){
-        vec[key] = value;
+    else if(this->Isp->search(t.s, t.p, Negect) != EndOfNode){
+        if(this->table->at(this->Isp->search(t.s, t.p, Negect) - 1)[Nsp] == EndOfNode)
+            this->table->at(this->Isp->search(t.s, t.p, Negect) - 1)[Nsp] = this->table->size() - 1;
+        else{
+            this->table->back()[Nsp] = this->table->at(this->Isp->search(t.s, t.p, Negect) - 1)[Nsp];
+            this->table->at(this->Isp->search(t.s, t.p, Negect) - 1)[Nsp] = this->table->size() - 1;
+        }
+    }
+    else{
+        this->Isp->insert(t.s, t.p, Negect, this->table->size());
+        this->table->back()[Nsp] = this->Is[t.s] - 1;
+        this->Is[t.s] = this->table->size();
+    }
+}
+
+void Table::update_Iop(struct Triple t){
+    if(this->Io[t.o] == 0){
+        this->Io[t.o] = this->table->size();
+        this->Iop->insert(t.o, t.p, Negect, this->table->size());
+    }
+    else if(this->Iop->search(t.o, t.p, Negect) != -1){
+        if(this->table->at(this->Iop->search(t.o, t.p, -1) - 1)[Nop] == -1)
+            this->table->at(this->Iop->search(t.o, t.p, -1) - 1)[Nop] = this->table->size() - 1;
+        else{
+            this->table->back()[Nop] = this->table->at(this->Iop->search(t.o, t.p, -1) - 1)[Nop];
+            this->table->at(this->Iop->search(t.o, t.p, -1) - 1)[Nop] = this->table->size() - 1;
+        }
+    }
+    else{
+        this->Iop->insert(t.o, t.p, -1, this->table->size());
+        this->table->back()[Nop] = this->Io[t.o] - 1;
+        this->Io[t.o] = this->table->size();
+    }
+}
+
+void Table::update_Ip(struct Triple t){
+    if(this->Ip[t.p] == 0){
+        this->Ip[t.p] = this->table->size();
+    }
+    else{
+        if(this->table->at(this->Ip[t.p] - 1)[Np] == -1)
+            this->table->at(this->Ip[t.p] - 1)[Np] = this->table->size() - 1;
+        else{
+            this->table->back()[Np] = this->table->at(this->Ip[t.p] - 1)[Np];
+            this->table->at(this->Ip[t.p] - 1)[Np] = this->table->size() - 1;
+        }
     }
 }
 
 void Table::insert(struct Triple t){
-    char concatenated[12];
-    std::memcpy(concatenated, (char*)&t.s, sizeof(int));
-    std::memcpy(concatenated+4, (char*)&t.p, sizeof(int));
-    std::memcpy(concatenated+8, (char*)&t.o, sizeof(int));    
-    int i = XXH32(concatenated, 12, 0) % this->size;
-
-    if((float)this->num_element/this->size > loading_factor)
-        this->resize();
-
-    int* T = this->table->at(i);
-    while(T != NULL){
-        if((T[0] == t.s) && (T[1] == t.p) && (T[2] == t.o)){
-            return;
-        }
-        i = (i + 1) % this->size;
-        T = this->table->at(i);
-    }
-
     int* T_new = new int[6];
     T_new[0] = t.s; T_new[1] = t.p; T_new[2] = t.o;
-    
+    T_new[3] = -1; T_new[4] = -1; T_new[5] = -1;
 
-    update_Ix(this->Is, t.s, i+1);
-    update_Ix(this->Ip, t.p, i+1);
-    update_Ix(this->Io, t.o, i+1);
-    this->Isp->insert(t.s, t.p, i+1);
-    this->Iop->insert(t.o, t.p, i+1);
-
-    this->table->at(i) = T_new;
-    ++this->num_element;
+    this->table->push_back(T_new);
+    int i = this->table->size();
+    if(this->table->size() < this->Is.size())
+        this->resize();
+    update_Isp(t);
+    update_Iop(t);
+    update_Ip(t);
 }
 
 void Table::print_table(){
-    for (int i = 0; i < this->size; i++){
-        if(this->table->at(i) != NULL)
-            std::cout << i << ": " << this->table->at(i)[0] << " " << this->table->at(i)[1] << " " << this->table->at(i)[2] << std::endl;
+    for (int i = 0; i < this->table->size(); i++){
+        std::cout << i << ": " << this->table->at(i)[0] << " " << this->table->at(i)[1] << " " << this->table->at(i)[2] << " ";
+        for(int j = 3; j < 6; j ++){
+            if(this->table->at(i)[j] != -1)
+                std::cout << this->table->at(i)[j] << " ";
+            else
+                std::cout << "  ";
+        }
+        std::cout << std::endl;
     }
 }
 
 void Table::print_I(std::vector<int>& vec){
     for(int i = 0; i < vec.size(); i++){
         if(vec[i] != 0)
-            std::cout << vec[i]-1 << " ";
+            std::cout << i << ": " << vec[i]-1<< " ";
         else
             std::cout << " " << " ";
     }
     std::cout << std::endl;
 }
 
-
 int main(){
+
     struct Triple t1 = {1, 3, 2};
-    struct Triple t2 = {2, 1, 4};
-    struct Triple t3 = {1, 1, 2};
-    struct Triple t4 = {1, 3, 4};
+    struct Triple t2 = {1, 3, 3};
+    struct Triple t3 = {1, 3, 4};
+    struct Triple t4 = {1, 4, 2};
     struct Triple t5 = {2, 1, 3};
     struct Triple t6 = {1, 1, 1};
+    struct Triple t7 = {3, 4, 5};
 
     Table* table = new Table();
-    
 
     table->insert(t1);
     table->insert(t2);
@@ -121,12 +137,10 @@ int main(){
     table->insert(t4);
     table->insert(t5);
     table->insert(t6);
+    table->insert(t7);
 
     table->print_table();
     table->print_I(table->Is);
     table->print_I(table->Ip);
-    table->print_I(table->Io);
-    table->Iop->print_I();
-    table->Isp->print_I();
     return 0;
 }

@@ -20,7 +20,9 @@ public:
 
     void insert(struct Triple t);
     void resize();
-    void update_Ix(std::vector<int>& vec, int key, int value);
+    void update_Isp(struct Triple t);
+    void update_Iop(struct Triple t);
+    void update_Ip(struct Triple t);
 
     void print_table();
     void print_I(std::vector<int>& vec);
@@ -29,7 +31,7 @@ public:
     int num_element;
     std::vector<int*>* table;
     std::vector<int> Is, Ip, Io;
-    HashTable* Isp,* Iop;
+    HashTable* Isp,* Iop, *Ispo;
 };
 
 #endif
