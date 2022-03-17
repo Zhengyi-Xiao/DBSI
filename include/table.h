@@ -23,10 +23,11 @@ public:
     void update_Isp(struct Triple t);
     void update_Iop(struct Triple t);
     void update_Ip(struct Triple t);
+    void evaluate(struct Triple t, struct Triple& result, int& index);
 
     void print_table();
     void print_I(std::vector<int>& vec);
-
+    
     int size;
     int num_element;
     std::vector<int*>* table;

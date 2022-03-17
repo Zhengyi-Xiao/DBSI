@@ -12,7 +12,7 @@ HashTable::HashTable(int tuple_type){
 
 void HashTable::insert(int s, int p, int o, int value){
     int i;
-    if(o != -1){
+    if(tuple_type == 3){
         char concatenated[12];
         std::memcpy(concatenated, (char*)&s, sizeof(int));
         std::memcpy(concatenated+4, (char*)&p, sizeof(int));
@@ -61,19 +61,20 @@ void HashTable::insert(int s, int p, int o, int value){
 
 int HashTable::search(int s, int p, int o){
     int i;
-    if(o != -1){
+    if(tuple_type == 3){
         char concatenated[12];
         std::memcpy(concatenated, (char*)&s, sizeof(int));
         std::memcpy(concatenated+4, (char*)&p, sizeof(int));
         std::memcpy(concatenated+8, (char*)&o, sizeof(int));
         i = XXH32(concatenated, 12, 0) % this->capacity;
+        
         if (this->table->at(i).empty()){
             return -1;
         }
         else{
             std::vector<int> T = this->table->at(i);
             while(!T.empty()){
-                if((T.at(0) == s) && (T.at(1) == p) && (T.at(2) == p)){
+                if((T.at(0) == s) && (T.at(1) == p) && (T.at(2) == o)){
                     return T.at(3);
                 }
                 i = (i + 1) % this->capacity;
@@ -187,32 +188,28 @@ HashTable::~HashTable(){
 /*
 int main(){
     struct Triple t1 = {1, 3, 2};
-    struct Triple t2 = {2, 1, 4};
-    struct Triple t3 = {1, 1, 2};
-    struct Triple t4 = {1, 3, 4};
+    struct Triple t2 = {1, 3, 3};
+    struct Triple t3 = {1, 3, 4};
+    struct Triple t4 = {1, 4, 2};
     struct Triple t5 = {2, 1, 3};
     struct Triple t6 = {1, 1, 1};
+    struct Triple t7 = {3, 4, 5};
 
-	HashTable* table = new HashTable(2);
-    
+
+	HashTable* table = new HashTable(3);
+
 	table->insert(t1.s, t1.p, t1.o, 0);
 	table->insert(t2.s, t2.p, t2.o, 1);
 	table->insert(t3.s, t3.p, t3.o, 2);
 	table->insert(t4.s, t4.p, t4.o, 3);
 	table->insert(t5.s, t5.p, t5.o, 4);
 	table->insert(t6.s, t6.p, t6.o, 5);
-	table->insert(t6.s, t6.p, t6.o, 6);    
-    
-	table->insert(t1.s, t1.p, -1, 0);
-	table->insert(t2.s, t2.p, -1, 1);
-	//table->insert(t3.s, t3.p, -1, 2);
-	table->insert(t4.s, t4.p, -1, 3);
-	table->insert(t5.s, t5.p, -1, 4);
-	//table->insert(t6.s, t6.p, -1, 5);
-	//table->insert(t6.s, t6.p, -1, 6);
-    
-    std::cout << table->search(t3.s, t3.p, -1) << std::endl;;
+	table->insert(t7.s, t7.p, t7.o, 6);    
+
+	
+    std::cout << table->search(t1.s, t1.p, t1.o) << std::endl;;
 	table->print_I();
 
 	return 0;
-}*/
+}
+*/

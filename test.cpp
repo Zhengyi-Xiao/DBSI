@@ -94,6 +94,7 @@ void Table::insert(struct Triple t){
     update_Isp(t);
     update_Iop(t);
     update_Ip(t);
+    this->Ispo->insert(t.s, t.p, t.o, this->table->size());
 }
 
 void Table::print_table(){
@@ -106,6 +107,15 @@ void Table::print_table(){
                 std::cout << "  ";
         }
         std::cout << std::endl;
+    }
+}
+
+void Table::evaluate(struct Triple t, struct Triple& result, int& index){
+    if(this->Ispo->search(t.s, t.p, t.o) != -1){
+        index = this->Ispo->search(t.s, t.p, t.o);
+        result.s = t.s;
+        result.p = t.p;
+        result.o = t.o;
     }
 }
 
@@ -140,7 +150,10 @@ int main(){
     table->insert(t7);
 
     table->print_table();
-    table->print_I(table->Is);
-    table->print_I(table->Ip);
+    
+    struct Triple t;
+    int index;
+    table->evaluate(t1, t, index);
+    std::cout << index << ": " << t.s << t.p << t.o << std::endl;
     return 0;
 }
