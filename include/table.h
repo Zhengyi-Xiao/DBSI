@@ -11,6 +11,9 @@
 #include "HashTable.h"
 
 #define loading_factor 0.6
+#define COPY(result, index, tmp, i) {result.s = tmp[0]; result.p = tmp[1]; result.o = tmp[2];index = tmp[i];}
+#define COPY_TRIPLE(result, t) {result.s = t.s; result.p = t.p; result.o = t.o;}
+#define COPY_TABLE(result, tmp) {result.s = tmp[0]; result.p = tmp[1]; result.o = tmp[2];}
 
 class Table{
     
@@ -23,13 +26,27 @@ public:
     void update_Isp(struct Triple t);
     void update_Iop(struct Triple t);
     void update_Ip(struct Triple t);
-    void evaluate(struct Triple t, struct Triple& result, int& index);
+
+    void evaluate(struct Triple t, struct Triple& result, int& index, int& sub_index);
+
+    void evaluate_SYZ(struct Triple t, struct Triple& result, int& index);
+    void evaluate_SPZ(struct Triple t, struct Triple& result, int& index);
+    void evaluate_SPO(struct Triple t, struct Triple& result, int& index);
+    void evaluate_XPO(struct Triple t, struct Triple& result, int& index);
+    void evaluate_XYO(struct Triple t, struct Triple& result, int& index);
+    void evaluate_SYO(struct Triple t, struct Triple& result, int& index);
+    void evaluate_XPZ(struct Triple t, struct Triple& result, int& index);
+
+    void evaluate_XYZ(struct Triple t, struct Triple& result, int& index, int& sub_index);
+    void evaluate_XXO(struct Triple t, struct Triple& result, int& index, int& sub_index);
+    void evaluate_SXX(struct Triple t, struct Triple& result, int& index, int& sub_index);
 
     void print_table();
     void print_I(std::vector<int>& vec);
     
     int size;
     int num_element;
+    int size_Is, size_Io;
     std::vector<int*>* table;
     std::vector<int> Is, Ip, Io;
     HashTable* Isp,* Iop, *Ispo;
