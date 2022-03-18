@@ -1,12 +1,12 @@
 #include "include/HashTable.h"
 #include "include/xxh3.h"
-#include "include/triple.h"
 #include <vector>
 
 HashTable::HashTable(int tuple_type){
-	capacity = 8;
-	table = new std::vector<std::vector<int>>;
-	table->resize(capacity);
+	this->capacity = 1024;
+    this->num_element = 0;
+	this->table = new std::vector<std::vector<int>>;
+	this->table->resize(capacity);
     this->tuple_type = tuple_type;
 }
 
@@ -24,10 +24,6 @@ void HashTable::insert(int s, int p, int o, int value){
 
         std::vector<int> T = this->table->at(i);
         while(!T.empty()){
-            /*
-            if(((T.at(0) == s) && (T.at(1) == p) && (T.at(2) == o)) ||  T.at(3) == i){
-                return;
-            }*/
             i = (i + 1) % this->capacity;
             T = this->table->at(i);
         }
@@ -45,10 +41,6 @@ void HashTable::insert(int s, int p, int o, int value){
 
         std::vector<int> T = this->table->at(i);
         while(!T.empty()){
-            /*
-            if(((T.at(0) == s) && (T.at(1) == p)) ||  T.at(2) == i){
-                return;
-            }*/
             i = (i + 1) % this->capacity;
             T = this->table->at(i);
         }
@@ -185,31 +177,3 @@ HashTable::~HashTable(){
 	delete[] table;
 	table = NULL;
 }
-/*
-int main(){
-    struct Triple t1 = {1, 3, 2};
-    struct Triple t2 = {1, 3, 3};
-    struct Triple t3 = {1, 3, 4};
-    struct Triple t4 = {1, 4, 2};
-    struct Triple t5 = {2, 1, 3};
-    struct Triple t6 = {1, 1, 1};
-    struct Triple t7 = {3, 4, 5};
-
-
-	HashTable* table = new HashTable(3);
-
-	table->insert(t1.s, t1.p, t1.o, 0);
-	table->insert(t2.s, t2.p, t2.o, 1);
-	table->insert(t3.s, t3.p, t3.o, 2);
-	table->insert(t4.s, t4.p, t4.o, 3);
-	table->insert(t5.s, t5.p, t5.o, 4);
-	table->insert(t6.s, t6.p, t6.o, 5);
-	table->insert(t7.s, t7.p, t7.o, 6);    
-
-	
-    std::cout << table->search(t1.s, t1.p, t1.o) << std::endl;;
-	table->print_I();
-
-	return 0;
-}
-*/

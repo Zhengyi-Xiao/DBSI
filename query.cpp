@@ -7,10 +7,7 @@
 #include <vector>
 #include <iterator>
 
-
-#include "include/table.h"
 #include "include/query.h"
-#include "include/read_ttl.h"
 
 template<typename K, typename S>
 void print_map(std::unordered_map<K, S> const &m)
@@ -54,8 +51,8 @@ void Query::process(std::string query){
     }
     for(i = 1; i < x.size(); i++){
         if(x[i].substr(0,1) == "?" && (this->Vs->find(x[i]) == this->Vs->end())){
-            (*this->Vs)[x[i]] = (-1*(this->num_Tps))-1;
-            ++this->num_Tps;
+            (*this->Vs)[x[i]] = (-1*(this->num_Vs))-1;
+            ++this->num_Vs;
         }
     }
     for(i = 1; i < x.size(); i++){
@@ -89,7 +86,7 @@ void Query::process(std::string query){
         else{
             tmp.o = this->read_ttl->IRI2idx->at(x[i+2].substr(1, x[i+2].size()-2));
         }        
-        
+        ++this->num_Tps;
         this->Tps->push_back(tmp);
         i += 4;
     }
@@ -101,9 +98,9 @@ void Query::join(){
 }
 
 void Query::join_helper(std::unordered_map<int, int> & sigma, int i){
-    if(i == this->num_Tps){
+    if(i >= this->num_Tps + 1){
         for(auto kv : *this->Voutput){
-            std::cout << this->read_ttl->idx2IRI->at(sigma[kv.second]) << " ";
+            std::cout << kv.first << " " << this->read_ttl->idx2IRI->at(sigma[kv.second]) << " ";
         }
         std::cout << std::endl;
     }
@@ -121,11 +118,12 @@ void Query::join_helper(std::unordered_map<int, int> & sigma, int i){
                 question.o = sigma[question.o];
             this->read_ttl->table->evaluate(question, result, index, sub_index);
             std::unordered_map<int, int> omega;
-            omega.insert(sigma.begin(), sigma.end());            
+            omega.insert(sigma.begin(), sigma.end());    
+
             if(index >= EndOfNode){
-                    omega[question.s] = result.s;
-                    omega[question.p] = result.p;
-                    omega[question.o] = result.o;
+                omega[question.s] = result.s;
+                omega[question.p] = result.p;
+                omega[question.o] = result.o;
                 join_helper(omega, i + 1);
             }
         }        
@@ -135,18 +133,36 @@ void Query::join_helper(std::unordered_map<int, int> & sigma, int i){
 int main(){
     //std::string query = "SELECT ?X ?Y WHERE { ?X <hasSon> ?Y . }";
     //std::string query2 = "SELECT ?X ?Y ?Z WHERE { ?X <hasPet> ?Y . ?Y <hasDaughter> ?Z . ?X <marriedTo> ?Z . }";
-    read_ttl* ttl = new read_ttl("test.ttl");
+    read_ttl* ttl = new read_ttl();
+    ttl->load("test.ttl");
+    ttl->load("test2.ttl");
     ttl->table->print_table();
-    
+
     std::string query = "SELECT ?X ?Z WHERE { ?X <hasAge> ?Y . ?Z <hasAge> ?Y . }";
+    query = "SELECT ?X ?Y WHERE { <Stewie> <loves> ?Y . ?Y <loves> ?X . }";
     Query* q = new Query(ttl);
     q->process(query);
 
     print_map(*q->Vs);
+    print_map(*q->Voutput);
+
     for (auto i: *q->Tps)
         std::cout << i.s << ' ' << i.p << ' ' << i.o << ' ' << std::endl;
 
+    struct Triple result;
+
+    struct Triple t;
+    int index = FirstSearch; int sub_index = FirstSearch;
+    struct Triple q1 = {0, 3, X};
+
+    std::cout << "start search " << std::endl;
+    while((index != EndOfNode && index != EndSearch)){
+        ttl->table->evaluate(q1, t, index, sub_index);
+        if(index >= EndOfNode)
+            std::cout << index << ": " << t.s << " " << t.p << " " << t.o << std::endl;
+    }
+
     q->join();
 
-
+    return 0;
 }

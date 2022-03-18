@@ -5,9 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "triple.h"
 #include "xxh3.h"
-#include "table.h"
 #include "HashTable.h"
 
 #define loading_factor 0.6
@@ -23,7 +21,24 @@
 #define FirstSearch -2
 #define EndSearch   -3
 
+#define X           -2
+#define Y           -3
+#define Z           -4
+
+struct Triple {
+    int s, p, o;
+};
+
 class Table{
+
+private:
+
+    int size;
+    int num_element;
+    int size_Is, size_Io;
+    std::vector<int*>* table;
+    std::vector<int> Is, Ip, Io;
+    HashTable* Isp,* Iop, *Ispo;
     
 public:
 
@@ -53,13 +68,6 @@ public:
 
     void print_table();
     void print_I(std::vector<int>& vec);
-    
-    int size;
-    int num_element;
-    int size_Is, size_Io;
-    std::vector<int*>* table;
-    std::vector<int> Is, Ip, Io;
-    HashTable* Isp,* Iop, *Ispo;
 };
 
 #endif
