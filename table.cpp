@@ -5,14 +5,7 @@
 
 #include "include/table.h"
 #include "include/HashTable.h"
-//#include "HashTable.cpp"
-#define Nsp         3
-#define Np          4
-#define Nop         5
-#define EndOfNode   -1
-#define Negect      -1
-#define FirstSearch -2
-#define EndSearch   -3
+
 
 Table::Table(){
     this->table = new std::vector<int*>;
@@ -375,7 +368,7 @@ void Table::print_I(std::vector<int>& vec){
     }
     std::cout << std::endl;
 }
-
+/*
 int main(){
     struct Triple t0 = {1, 2, 2};
     struct Triple t1 = {1, 3, 2};
@@ -434,4 +427,4 @@ int main(){
 
     
     return 0;
-}
+}*/

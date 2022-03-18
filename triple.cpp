@@ -6,7 +6,7 @@
 #include <queue>
 
 #include "include/triple.h"
-
+/*
 void get_all_keys(std::unordered_map<int, struct TrieNode*> map){
     std::vector<int> keys;
     keys.reserve(map.size());

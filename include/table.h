@@ -15,6 +15,14 @@
 #define COPY_TRIPLE(result, t) {result.s = t.s; result.p = t.p; result.o = t.o;}
 #define COPY_TABLE(result, tmp) {result.s = tmp[0]; result.p = tmp[1]; result.o = tmp[2];}
 
+#define Nsp         3
+#define Np          4
+#define Nop         5
+#define EndOfNode   -1
+#define Negect      -1
+#define FirstSearch -2
+#define EndSearch   -3
+
 class Table{
     
 public:

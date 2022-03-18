@@ -1,20 +1,12 @@
 #include <iostream>
 #include <fstream>
-#include "include/LinearHashing.h"
 #include <unordered_map>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <err.h>
-#include <sys/time.h>
-#include <mach/vm_statistics.h>
-#include <mach/mach_types.h>
-#include <mach/mach_init.h>
-#include <mach/mach_host.h>
-#include "include/xxh3.h"
-#include<mach/mach.h>
 
+#include "include/read_ttl.h"
 
 template<typename K, typename V>
 void print_map(std::unordered_map<K, V> const &m)
@@ -23,37 +15,17 @@ void print_map(std::unordered_map<K, V> const &m)
         std::cout << "{" << pair.first << ": " << pair.second << "}\n";
     }
 }
-std::unordered_map<int, std::string> idx2IRI;
-std::unordered_map<std::string, int> IRI2idx;
-int counter = 0;
 
-void tokenize(std::string s) {
-    int start = 0;
-    int end = s.find(" ");
-    while (end != -1) {
-        std::string token = s.substr(start, end - start);
-        if(((token.compare(0,1,"<") == 0) && (token.compare(token.length()-1,1,">") == 0)) ||
-            ((token.compare(0,1,"\"") == 0) && (token.compare(token.length()-1,1,"\"") == 0))){
-            token = token.substr(1, token.length()-2);
-        }
-
-        if(!IRI2idx.count(token)){
-            IRI2idx[token] = counter;
-            idx2IRI[counter] = token;
-            counter++;
-        }
-        start = end + 1;
-        end = s.find(" ", start);
-    }
-}
-
-int main() {
-    std::string myText;
-	Hashmap h(0, 5);
+read_ttl::read_ttl(std::string file_name){
+    this->table = new Table();
+    this->idx2IRI = new std::vector<std::string>();
+    this->IRI2idx = new std::unordered_map<std::string, int>();
+    this->counter = 0;
 
     // Read from the text file
-    std::ifstream MyReadFile("LUBM-100-mat.ttl");
+    std::ifstream MyReadFile(file_name);
     int i = 0;
+    std::string myText;
     // Use a while loop together with the getline() function to read the file line by line
     while (getline (MyReadFile, myText)) {
         // Output the text from the file
@@ -65,16 +37,49 @@ int main() {
     // Close the file
     MyReadFile.close();
 
-    std::cout << IRI2idx.size() << std::endl;
-    struct task_basic_info t_info;
-    mach_msg_type_number_t t_info_count = TASK_BASIC_INFO_COUNT;
-
-    if (KERN_SUCCESS != task_info(mach_task_self(),
-                                  TASK_BASIC_INFO, (task_info_t)&t_info,
-                                  &t_info_count))
-    {
-        return -1;
-    }
-    printf("%lu\n", t_info.resident_size);
-    printf("%lu\n", t_info.virtual_size);
+    std::cout << IRI2idx->size() << std::endl;    
 }
+
+void read_ttl::tokenize(std::string s) {
+    int start = 0;
+    int end = s.find(" ");
+    struct Triple triple;
+    int i = 0;
+    while (end != -1) {
+        std::string token = s.substr(start, end - start);
+        if(((token.compare(0,1,"<") == 0) && (token.compare(token.length()-1,1,">") == 0)) ||
+            ((token.compare(0,1,"\"") == 0) && (token.compare(token.length()-1,1,"\"") == 0))){
+            token = token.substr(1, token.length()-2);
+        }
+
+        if(!IRI2idx->count(token)){
+            (*IRI2idx)[token] = counter;
+            idx2IRI->push_back(token);
+            counter++;
+        }
+        start = end + 1;
+        end = s.find(" ", start);
+        if(i == 0){
+            triple.s = (*IRI2idx)[token];
+        }
+        else if(i == 1){
+            triple.p = (*IRI2idx)[token];
+        }
+        else if(i == 2){
+            triple.o = (*IRI2idx)[token];
+        }
+        i++;
+    }
+    this->table->insert(triple);
+}
+/*
+int main(){
+    //read_ttl* tmp = new read_ttl("LUBM-001-mat.ttl");
+    read_ttl* tmp = new read_ttl("tmp.ttl");
+    for(int i = 0; i < tmp->idx2IRI->size(); i++){
+        std::cout << i << ": " << (*tmp->idx2IRI)[i] << std::endl;
+    }
+    print_map(*tmp->IRI2idx);
+}
+
+*/
