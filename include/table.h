@@ -40,6 +40,8 @@ public:
     void evaluate_XYZ(struct Triple t, struct Triple& result, int& index, int& sub_index);
     void evaluate_XXO(struct Triple t, struct Triple& result, int& index, int& sub_index);
     void evaluate_SXX(struct Triple t, struct Triple& result, int& index, int& sub_index);
+    void evaluate_XPX(struct Triple t, struct Triple& result, int& index, int& sub_index);
+    void evaluate_XXX(struct Triple t, struct Triple& result, int& index, int& sub_index);
 
     void print_table();
     void print_I(std::vector<int>& vec);

@@ -145,9 +145,13 @@ inline void Table::evaluate_SPZ(struct Triple t, struct Triple& result, int& ind
 }
 
 inline void Table::evaluate_SPO(struct Triple t, struct Triple& result, int& index){
-    if(this->Ispo->search(t.s, t.p, t.o) != -1)
+    if(this->Ispo->search(t.s, t.p, t.o) != -1){
         COPY_TRIPLE(result, t);
-    index = EndOfNode;
+        index = EndOfNode;
+    }
+    else{
+        index = EndSearch;
+    }
 }
 
 inline void Table::evaluate_XPO(struct Triple t, struct Triple& result, int& index){
@@ -215,93 +219,76 @@ inline void Table::evaluate_XPZ(struct Triple t, struct Triple& result, int& ind
 }
 
 inline void Table::evaluate_SXX(struct Triple t, struct Triple& result, int& index, int& sub_index){
-     if(index == FirstSearch){
-        // find the first non-zero
-        for(int i = 0; i < this->Io.size(); ++i){
-            if(Io[i] > 0){
-                sub_index = i;
-                break;
-            }
-        }
-        // if we iterate all the list but we got nothing, return EndSearch
-        if(sub_index == FirstSearch){
-            index = EndSearch;
-            return;
-        }
-        t.o = sub_index;
-        t.p = sub_index;
-        evaluate_XPO(t, result, index);
+    if(index == FirstSearch)
+        index = 1;
+    if(sub_index == EndOfNode){
+        ++index;
+        sub_index = FirstSearch;
     }
-    else{
-        do{
-            // find the first non-zero 
-            if(index <= -1){
-                for(int i = sub_index + 1; i < this->Io.size(); ++i){
-                    if(Io[i] > 0){
-                        sub_index = i;
-                        index = FirstSearch;
-                        break;
-                    }
-                    if(i == this->Io.size() - 1){
-                        index = EndSearch;
-                        return;
-                    }
-                }
-            }
-            t.o = sub_index;
-            t.p = sub_index;
-            if(this->Iop->search(t.o, t.p, Negect) != -1)
-                evaluate_XPO(t, result, index);    
-            if(index > -1)
-                break;            
-        } while (sub_index != EndSearch);
-        
+
+    for(; index < this->Is.size(); index++){
+        if(this->Is[index] > 0){
+            evaluate_SYZ({index, X, X}, result, sub_index);
+            if(sub_index != EndSearch)
+                return;
+        }
+        sub_index = FirstSearch;
     }
+    index = EndSearch;
 }
 
 inline void Table::evaluate_XXO(struct Triple t, struct Triple& result, int& index, int& sub_index){
-    if(index == FirstSearch){
-        // find the first non-zero
-        for(int i = 0; i < this->Is.size(); ++i){
-            if(Is[i] > 0){
-                sub_index = i;
-                break;
+    if(index == FirstSearch)
+        index = 1;
+    if(sub_index == EndOfNode){
+        ++index;
+        sub_index = FirstSearch;
+    }
+
+    for(; index < this->Io.size(); index++){
+        if(this->Io[index] > 0){
+            evaluate_XYO({X, X, index}, result, sub_index);
+            if(sub_index != EndSearch)
+                return;
+        }
+        sub_index = FirstSearch;
+    }
+    index = EndSearch;
+}
+
+inline void Table::evaluate_XPX(struct Triple t, struct Triple& result, int& index, int& sub_index){
+    if(index == FirstSearch)
+        index = 1;
+    if(sub_index == EndOfNode){
+        ++index;
+        sub_index = FirstSearch;
+    }
+
+    for(; index < this->Ip.size(); index++){
+        if(this->Ip[index] > 0){
+            evaluate_XPZ({X, index, X}, result, sub_index);
+            if(sub_index != EndSearch)
+                return;
+        }
+        sub_index = FirstSearch;
+    }
+    index = EndSearch;
+}
+
+inline void Table::evaluate_XXX(struct Triple t, struct Triple& result, int& index, int& sub_index){
+    if(index == FirstSearch)
+        index = 1;
+
+    for(; index < this->Is.size(); index++){
+        if(this->Is[index] > 0){
+            evaluate_SPO({index, index, index}, result, sub_index);
+            if(sub_index == EndOfNode){
+                ++index;
+                return;
             }
         }
-        // if we iterate all the list but we got nothing, return EndSearch
-        if(sub_index == FirstSearch){
-            index = EndSearch;
-            return;
-        }
-        t.s = sub_index;
-        t.p = sub_index;
-        evaluate_SPZ(t, result, index);
     }
-    else{
-        do{
-            // find the first non-zero 
-            if(index <= -1){
-                for(int i = sub_index + 1; i < this->Is.size(); ++i){
-                    if(Is[i] > 0){
-                        sub_index = i;
-                        index = FirstSearch;
-                        break;
-                    }
-                    if(i == this->Is.size() - 1){
-                        sub_index = EndSearch;
-                        return;
-                    }
-                }
-            }
-            t.s = sub_index;
-            t.p = sub_index;
-            if(this->Isp->search(t.s, t.p, Negect) != -1)
-                evaluate_SPZ(t, result, index);    
-            if(index > -1)
-                break;            
-        } while (sub_index != EndSearch);
-        
-    }
+    index = EndSearch;
 }
 
 inline void Table::evaluate_XYZ(struct Triple t, struct Triple& result, int& index, int& sub_index){
@@ -332,6 +319,12 @@ void Table::evaluate(struct Triple t, struct Triple& result, int& index, int& su
         }
         else if(t.p == t.o && t.s != t.p && t.s != t.o){
             evaluate_SXX(t, result, index, sub_index);
+        }
+        else if(t.s == t.o && t.s != t.p && t.o != t.p){
+            evaluate_XPX(t, result, index, sub_index);
+        }
+        else if(t.s == t.p && t.p == t.o && t.o == t.s){
+            evaluate_XXX(t, result, index, sub_index);
         }
         return;
     }
@@ -407,20 +400,33 @@ int main(){
     struct Triple t20 = {3, 6, 3};
 
     Table* table = new Table();
+    table->insert({3,1,3});    
+    table->insert(t2);
+    table->insert(t3);
+    table->insert({2,2,2});
+    table->insert(t4);
     table->insert({1,1,2});
     table->insert({3,3,2});  
     table->insert({3,3,3});
     table->insert({4,4,2});
+    table->insert(t0);
+    table->insert(t1);
+    table->insert(t5);
+    table->insert(t6);
+    table->insert(t7);
+    table->insert({4,4,4});
+    table->insert(t8);
+    table->insert(t9);
+    table->insert({2,1,2});
 
     table->print_table();
 
     struct Triple t;
     int index = FirstSearch; int sub_index = FirstSearch;
-    struct Triple q = {X, X, Z};
+    struct Triple q = {2, 1, 2};
 
     std::cout << "start search " << std::endl;
-    while((sub_index == FirstSearch && index != EndOfNode && index != EndSearch) || 
-          (sub_index != EndSearch)  ){
+    while((index != EndOfNode && index != EndSearch)){
         table->evaluate(q, t, index, sub_index);
         if(index >= EndOfNode)
             std::cout << index << ": " << t.s << t.p << t.o << std::endl;
