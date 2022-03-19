@@ -22,9 +22,12 @@ read_ttl::read_ttl(){
     this->counter = 0;
 }
 
-void read_ttl::load(std::string file_name){
+int read_ttl::load(std::string file_name){
     // Read from the text file
     std::ifstream MyReadFile(file_name);
+    if(!MyReadFile.is_open()){
+        return FAIL;
+    }
     int i = 0;
     std::string myText;
     // Use a while loop together with the getline() function to read the file line by line
@@ -36,6 +39,7 @@ void read_ttl::load(std::string file_name){
     }
     // Close the file
     MyReadFile.close();
+    return SUCCES;
 }
 
 void read_ttl::tokenize(std::string s) {

@@ -8,11 +8,14 @@
 
 #include "table.h"
 
+#define FAIL    -1
+#define SUCCES  1
+
 class read_ttl{
 
 public:
     read_ttl();
-    void load(std::string file_name);
+    int load(std::string file_name);
     void tokenize(std::string s);
 
     std::vector<std::string>* idx2IRI;

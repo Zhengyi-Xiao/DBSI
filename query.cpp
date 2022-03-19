@@ -34,21 +34,27 @@ std::vector<std::string> split(const std::string &s, char delim) {
 
 Query::Query(class read_ttl* read_ttl){
     this->read_ttl = read_ttl;
+    this->output = true;
+}
+
+void Query::set_output(bool output){
+    this->output = output;
 }
 
 void Query::process(std::string query){
     this->num_Tps = 0;
     this->num_Vs = 0;
 
-    Vs = new std::unordered_map<std::string, int>();
+    Vs = new std::map<std::string, int>();
     Tps = new std::vector<struct Triple>();
-    Voutput = new std::unordered_map<std::string, int>();
+    Voutput = new std::map<std::string, int>();
     std::vector<std::string> x = split(query, ' ');
     int i = 0;
-    if(x[0] != "SELECT"){
+    /*
+    if(x[0] != "SELECT" && x[0] != "COUNT"){
         std::cout << "No select" << std::endl;
         return;
-    }
+    }*/
     for(i = 1; i < x.size(); i++){
         if(x[i].substr(0,1) == "?" && (this->Vs->find(x[i]) == this->Vs->end())){
             (*this->Vs)[x[i]] = (-1*(this->num_Vs))-1;
@@ -94,15 +100,25 @@ void Query::process(std::string query){
 
 void Query::join(){
     std::unordered_map<int, int> sigma; 
+    this->result_size = 0;
+    if(this->output){
+        for(auto kv : *this->Voutput){
+            std::cout << kv.first << " ";
+        } 
+        std::cout << std::endl;
+    }
     join_helper(sigma, 1);
 }
 
 void Query::join_helper(std::unordered_map<int, int> & sigma, int i){
     if(i >= this->num_Tps + 1){
-        for(auto kv : *this->Voutput){
-            std::cout << kv.first << " " << this->read_ttl->idx2IRI->at(sigma[kv.second]) << " ";
+        if(this->output){
+            for(auto kv : *this->Voutput){
+                std::cout << "<" << this->read_ttl->idx2IRI->at(sigma[kv.second]) << "> ";
+            }
+            std::cout << std::endl;
         }
-        std::cout << std::endl;
+        ++this->result_size;
     }
     else{
         struct Triple question;
@@ -130,6 +146,7 @@ void Query::join_helper(std::unordered_map<int, int> & sigma, int i){
     }
 }
 
+/*
 int main(){
     //std::string query = "SELECT ?X ?Y WHERE { ?X <hasSon> ?Y . }";
     //std::string query2 = "SELECT ?X ?Y ?Z WHERE { ?X <hasPet> ?Y . ?Y <hasDaughter> ?Z . ?X <marriedTo> ?Z . }";
@@ -165,4 +182,4 @@ int main(){
     q->join();
 
     return 0;
-}
+}*/

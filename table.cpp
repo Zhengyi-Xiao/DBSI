@@ -19,6 +19,10 @@ Table::Table(){
     this->size_Is = 0;
 }
 
+int Table::size_of_table(){
+    return this->table->size();
+}
+
 void Table::resize(){
     this->Is.resize(this->table->size() << 2);
     this->Ip.resize(this->table->size() << 2);

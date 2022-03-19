@@ -44,6 +44,8 @@ public:
 
     Table();
 
+    int size_of_table();
+
     void insert(struct Triple t);
     void resize();
     void update_Isp(struct Triple t);
