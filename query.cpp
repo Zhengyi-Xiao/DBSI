@@ -10,7 +10,7 @@
 #include "include/query.h"
 
 template<typename K, typename S>
-void print_map(std::unordered_map<K, S> const &m)
+void print_map(std::map<K, S> const &m)
 {
     for (auto const &pair: m) {
         std::cout << "{" << pair.first << ": " << pair.second << "}\n";
@@ -152,17 +152,18 @@ int main(){
     //std::string query2 = "SELECT ?X ?Y ?Z WHERE { ?X <hasPet> ?Y . ?Y <hasDaughter> ?Z . ?X <marriedTo> ?Z . }";
     read_ttl* ttl = new read_ttl();
     ttl->load("test.ttl");
-    ttl->load("test2.ttl");
     ttl->table->print_table();
 
     std::string query = "SELECT ?X ?Z WHERE { ?X <hasAge> ?Y . ?Z <hasAge> ?Y . }";
     query = "SELECT ?X ?Y WHERE { <Stewie> <loves> ?Y . ?Y <loves> ?X . }";
     Query* q = new Query(ttl);
+    q->set_output(false);
     q->process(query);
 
     print_map(*q->Vs);
     print_map(*q->Voutput);
 
+    std::cout << "Triple Patterns are " << std::endl;
     for (auto i: *q->Tps)
         std::cout << i.s << ' ' << i.p << ' ' << i.o << ' ' << std::endl;
 
@@ -178,7 +179,7 @@ int main(){
         if(index >= EndOfNode)
             std::cout << index << ": " << t.s << " " << t.p << " " << t.o << std::endl;
     }
-
+    
     q->join();
 
     return 0;

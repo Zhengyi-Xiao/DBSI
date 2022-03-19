@@ -27,7 +27,16 @@
 
 struct Triple {
     int s, p, o;
+
+    inline bool operator==(Triple t) {
+        if (t.s == s && t.p == p && t.o == 0)
+           return true;
+        else
+           return false;
+     }
 };
+
+struct Triple NULL_TRIPLE =  {-1, -1, -1};
 
 class Table{
 

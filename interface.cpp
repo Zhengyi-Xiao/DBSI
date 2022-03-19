@@ -54,7 +54,6 @@ void Interface::COUNT(std::string input){
     std::cout << this->query_parser->result_size << " results returned in " << std::chrono::duration_cast<std::chrono::microseconds>(this->end - this->begin).count() << " ms." << std::endl;
 }
 
-
 std::vector<std::string> split(std::string s){
     std::vector<std::string> result;
 
@@ -69,6 +68,7 @@ std::vector<std::string> split(std::string s){
     return result;
 }
 
+/*
 int main() {
 
     Interface* interface = new Interface();
@@ -102,4 +102,4 @@ int main() {
         std::cout << "> ";
     }
     return 0;
-}
+}*/

@@ -89,6 +89,8 @@ void Table::insert(struct Triple t){
     int* T_new = new int[6];
     T_new[0] = t.s; T_new[1] = t.p; T_new[2] = t.o;
     T_new[3] = -1; T_new[4] = -1; T_new[5] = -1;
+    if(this->Ispo->search(t.s, t.p, t.o) != -1)
+        return;
 
     this->table->push_back(T_new);
     int i = this->table->size();
