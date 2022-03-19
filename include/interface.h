@@ -8,7 +8,9 @@
 #include <iostream>
 #include <chrono>
 
-#include "query.h"
+#include "query_parser.h"
+#include "query_planner.h"
+#include "SPARQL_engine.h"
 
 typedef std::map< std::string, std::function<void(void)> > command_dict;
 
@@ -23,7 +25,9 @@ public:
 
     int current_loaded_data;
     Turtle_handler* ttl;
-    Query* query_parser;
+    Query_parser* query_parser;
+    Query_planner* query_planner;
+    SPARQL_engine* query_engine;
 
     std::chrono::steady_clock::time_point begin;
     std::chrono::steady_clock::time_point end;

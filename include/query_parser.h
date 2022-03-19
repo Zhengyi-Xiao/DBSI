@@ -3,16 +3,17 @@
 
 #include "RDF_index.h"
 #include "Turtle_handler.h"
+
 #include <unordered_map>
 #include <map>
 #include <vector>
 #include <string>
 
-class Query{
+class Query_parser{
 
 public:
-    Query(Turtle_handler* Turtle_handler);
-    void process(std::string query);
+    Query_parser(Turtle_handler* Turtle_handler);
+    int process(std::string query);
     void join();
     void join_helper(std::unordered_map<int, int>& sigma, int i);
     void set_output(bool output);

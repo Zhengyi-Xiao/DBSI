@@ -2,8 +2,11 @@
 
 Interface::Interface(){
     this->ttl = new Turtle_handler();
-    this->query_parser = new Query(this->ttl);
+    this->query_parser = new Query_parser(this->ttl);
+    this->query_planner = new Query_planner();
+    this->query_engine = new SPARQL_engine();
     this->current_loaded_data = 0;
+
 }
 
 void Interface::LOAD(std::vector<std::string> token_input){
@@ -14,7 +17,7 @@ void Interface::LOAD(std::vector<std::string> token_input){
         this->begin = std::chrono::steady_clock::now();
         if(this->ttl->load(token_input[1]) == SUCCES){
             this->end = std::chrono::steady_clock::now();
-            std::cout << this->ttl->table->size_of_table() - this->current_loaded_data << " triples loaded in " << std::chrono::duration_cast<std::chrono::milliseconds>(this->end - this->begin).count() << "ms." << std::endl;
+            std::cout << this->ttl->table->size_of_table() - this->current_loaded_data << " triples loaded in " << (float)std::chrono::duration_cast<std::chrono::milliseconds>(this->end - this->begin).count() << " ms." << std::endl;
             this->current_loaded_data += this->ttl->table->size_of_table();
         }
         else{
@@ -29,26 +32,39 @@ void Interface::PRINT_TABLE(std::vector<std::string> token_input){
 
 void Interface::SELECT(std::string input){
     std::cout << "----------" << std::endl;
-
     this->begin = std::chrono::steady_clock::now();
+    
     this->query_parser->set_output(true);
-    this->query_parser->process(input);
-    this->query_parser->join();
+    if(this->query_parser->process(input) == SUCCES){
+        std::vector<struct Triple> new_plan;
+        this->query_planner->plan_query(*this->query_parser->Tps, new_plan);
+        this->query_parser->Tps = &new_plan;
+        this->query_engine->join(this->query_parser);
+    }
+    else{
+        std::cout << "FAIL" << std::endl;
+        return;
+    }
+        
     this->end = std::chrono::steady_clock::now();
 
     std::cout << "----------" << std::endl;
-    std::cout << this->query_parser->result_size << " results returned in " << std::chrono::duration_cast<std::chrono::milliseconds>(this->end - this->begin).count() << " ms." << std::endl;
+    std::cout << this->query_parser->result_size << " results returned in " << (float)std::chrono::duration_cast<std::chrono::milliseconds>(this->end - this->begin).count() << " ms." << std::endl;
 }
 
 void Interface::COUNT(std::string input){
 
     this->begin = std::chrono::steady_clock::now();
     this->query_parser->set_output(false);
-    this->query_parser->process(input);
-    this->query_parser->join();
+    if(this->query_parser->process(input) == SUCCES){
+        std::vector<struct Triple> new_plan;
+        this->query_planner->plan_query(*this->query_parser->Tps, new_plan);
+        this->query_parser->Tps = &new_plan;
+        this->query_engine->join(query_parser);
+    }
     this->end = std::chrono::steady_clock::now();
 
-    std::cout << this->query_parser->result_size << " results returned in " << std::chrono::duration_cast<std::chrono::milliseconds>(this->end - this->begin).count() << " ms." << std::endl;
+    std::cout << this->query_parser->result_size << " results returned in " << (float)std::chrono::duration_cast<std::chrono::milliseconds>(this->end - this->begin).count() << " ms." << std::endl;
 }
 
 std::vector<std::string> split(std::string s){
@@ -65,10 +81,12 @@ std::vector<std::string> split(std::string s){
     return result;
 }
 
-/*
+
 int main() {
 
     Interface* interface = new Interface();
+    SPARQL_engine* query_engine = new SPARQL_engine();
+        
     std::vector<std::string> token_input;
     std::cout << "> ";
     std::string input;
@@ -99,4 +117,4 @@ int main() {
         std::cout << "> ";
     }
     return 0;
-}*/
+}
