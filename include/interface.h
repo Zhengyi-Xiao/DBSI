@@ -22,7 +22,7 @@ public:
     void COUNT(std::string input);
 
     int current_loaded_data;
-    read_ttl* ttl;
+    Turtle_handler* ttl;
     Query* query_parser;
 
     std::chrono::steady_clock::time_point begin;

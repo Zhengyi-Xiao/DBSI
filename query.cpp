@@ -32,8 +32,8 @@ std::vector<std::string> split(const std::string &s, char delim) {
     return elems;
 }
 
-Query::Query(class read_ttl* read_ttl){
-    this->read_ttl = read_ttl;
+Query::Query(class Turtle_handler* Turtle_handler){
+    this->Turtle_handler = Turtle_handler;
     this->output = true;
 }
 
@@ -77,20 +77,20 @@ void Query::process(std::string query){
         }
         else{
             std::string tmp_str = x[i].substr(1, x[i].size()-2);
-            tmp.s = this->read_ttl->IRI2idx->at(tmp_str);
+            tmp.s = this->Turtle_handler->IRI2idx->at(tmp_str);
         }
         
         if(x[i+1].substr(0,1) == "?"){
             tmp.p = (*this->Vs)[x[i+1]];
         }
         else{
-            tmp.p = this->read_ttl->IRI2idx->at(x[i+1].substr(1, x[i+1].size()-2));
+            tmp.p = this->Turtle_handler->IRI2idx->at(x[i+1].substr(1, x[i+1].size()-2));
         }
         if(x[i+2].substr(0,1) == "?"){
             tmp.o = (*this->Vs)[x[i+2]];
         }
         else{
-            tmp.o = this->read_ttl->IRI2idx->at(x[i+2].substr(1, x[i+2].size()-2));
+            tmp.o = this->Turtle_handler->IRI2idx->at(x[i+2].substr(1, x[i+2].size()-2));
         }        
         ++this->num_Tps;
         this->Tps->push_back(tmp);
@@ -114,7 +114,7 @@ void Query::join_helper(std::unordered_map<int, int> & sigma, int i){
     if(i >= this->num_Tps + 1){
         if(this->output){
             for(auto kv : *this->Voutput){
-                std::cout << "<" << this->read_ttl->idx2IRI->at(sigma[kv.second]) << "> ";
+                std::cout << "<" << this->Turtle_handler->idx2IRI->at(sigma[kv.second]) << "> ";
             }
             std::cout << std::endl;
         }
@@ -132,7 +132,7 @@ void Query::join_helper(std::unordered_map<int, int> & sigma, int i){
                 question.p = sigma[question.p];
             if(sigma.count(question.o))
                 question.o = sigma[question.o];
-            this->read_ttl->table->evaluate(question, result, index, sub_index);
+            this->Turtle_handler->table->evaluate(question, result, index, sub_index);
             std::unordered_map<int, int> omega;
             omega.insert(sigma.begin(), sigma.end());    
 
@@ -146,16 +146,116 @@ void Query::join_helper(std::unordered_map<int, int> & sigma, int i){
     }
 }
 
-/*
+
 int main(){
     //std::string query = "SELECT ?X ?Y WHERE { ?X <hasSon> ?Y . }";
     //std::string query2 = "SELECT ?X ?Y ?Z WHERE { ?X <hasPet> ?Y . ?Y <hasDaughter> ?Z . ?X <marriedTo> ?Z . }";
-    read_ttl* ttl = new read_ttl();
+    Turtle_handler* ttl = new Turtle_handler();
     ttl->load("test.ttl");
-    ttl->table->print_table();
+    //ttl->table->print_table();
 
     std::string query = "SELECT ?X ?Z WHERE { ?X <hasAge> ?Y . ?Z <hasAge> ?Y . }";
-    query = "SELECT ?X ?Y WHERE { <Stewie> <loves> ?Y . ?Y <loves> ?X . }";
+    //query = "SELECT ?X ?Y WHERE { <Stewie>   <loves> ?Y . ?Y <loves> ?X . }";
+    
+
+    std::map<std::string, int>* Vs = new std::map<std::string, int>();
+    std::vector<struct Triple>* Tps = new std::vector<struct Triple>();
+    std::map<std::string, int>* Voutput = new std::map<std::string, int>();
+
+    int num_Vs = 0;
+    int begin = 0; int end = 0;
+    int len = query.length();
+    bool where_appear = false;
+    std::vector<int> triple;
+    while(begin < len){
+        // Check if WHERE appears
+        if(!where_appear && query[begin] == 'W'){
+            end = begin + 1;
+            while(end < len){
+                if(query[end] == ' ')
+                    break;
+                ++end;
+            }
+            if(query.substr(begin, end - begin) == "WHERE")
+                where_appear = true;
+            begin = end + 1;
+            continue;
+        }
+        // Store variables into Output list or Variable list.
+        if(query[begin] == '?'){
+            end = begin + 1;
+            while(end < len){
+                if(query[end] == ' '){
+                    std::string token = query.substr(begin, end - begin);
+                    if(!where_appear)
+                        (*Voutput)[token] = (-1*num_Vs)-2;
+                    if(Vs->find(token) == Vs->end()){
+                        (*Vs)[token] = (-1*num_Vs)-2;
+                        ++num_Vs;
+                    }
+                    if(where_appear)
+                        triple.push_back((*Vs)[token]);
+                    break;
+                }
+                ++end;
+            }
+            begin = end + 1;
+            continue;
+        }
+        // Handle IRIs
+        if(query[begin] == '<'){
+            end = begin + 1;
+            while(end < len){
+                if(query[end] == '>'){
+                    std::string token = query.substr(begin, end - begin);
+                    triple.push_back(1);
+                    break;
+                }
+                ++end;
+            }
+            begin = end + 1;
+            continue;
+        }
+        
+        // Handle Literals
+        if(query[begin] == '\"'){
+            end = begin + 1;
+            while(end < len){
+                if(query[end] == '\"'){
+                    std::string token = query.substr(begin, end - begin);
+                    triple.push_back(1);
+                    break;
+                }
+                ++end;
+            }
+            begin = end + 1;
+            continue;
+        }
+        
+        // Store Triple
+        if(query[begin] == '.'){
+            if(triple.size() == 3){
+                for(auto kv : triple){
+                    std::cout << kv << " ";
+                }
+                std::cout << std::endl;
+                triple.clear();
+            }
+            else{
+                std::cout << "wrong" << std::endl;
+            }
+        }
+        
+        ++begin;
+    }    
+    for(auto kv : *Vs){
+        std::cout << kv.first << " " << kv.second << std::endl;
+    }
+    for(auto kv : triple){
+        std::cout << kv << " ";
+    }
+    std::cout << std::endl;
+    /*
     Query* q = new Query(ttl);
     q->set_output(false);
     q->process(query);
@@ -181,6 +281,6 @@ int main(){
     }
     
     q->join();
-
+    */
     return 0;
-}*/
+}

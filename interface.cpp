@@ -1,11 +1,8 @@
 #include "include/interface.h"
 
 Interface::Interface(){
-    this->ttl = new read_ttl();
+    this->ttl = new Turtle_handler();
     this->query_parser = new Query(this->ttl);
-
-    this->begin = std::chrono::steady_clock::now();
-    this->end = std::chrono::steady_clock::now();
     this->current_loaded_data = 0;
 }
 
@@ -17,7 +14,7 @@ void Interface::LOAD(std::vector<std::string> token_input){
         this->begin = std::chrono::steady_clock::now();
         if(this->ttl->load(token_input[1]) == SUCCES){
             this->end = std::chrono::steady_clock::now();
-            std::cout << this->ttl->table->size_of_table() - this->current_loaded_data << " triples loaded in " << std::chrono::duration_cast<std::chrono::microseconds>(this->end - this->begin).count() << "ms." << std::endl;
+            std::cout << this->ttl->table->size_of_table() - this->current_loaded_data << " triples loaded in " << std::chrono::duration_cast<std::chrono::milliseconds>(this->end - this->begin).count() << "ms." << std::endl;
             this->current_loaded_data += this->ttl->table->size_of_table();
         }
         else{
@@ -40,7 +37,7 @@ void Interface::SELECT(std::string input){
     this->end = std::chrono::steady_clock::now();
 
     std::cout << "----------" << std::endl;
-    std::cout << this->query_parser->result_size << " results returned in " << std::chrono::duration_cast<std::chrono::microseconds>(this->end - this->begin).count() << " ms." << std::endl;
+    std::cout << this->query_parser->result_size << " results returned in " << std::chrono::duration_cast<std::chrono::milliseconds>(this->end - this->begin).count() << " ms." << std::endl;
 }
 
 void Interface::COUNT(std::string input){
@@ -51,7 +48,7 @@ void Interface::COUNT(std::string input){
     this->query_parser->join();
     this->end = std::chrono::steady_clock::now();
 
-    std::cout << this->query_parser->result_size << " results returned in " << std::chrono::duration_cast<std::chrono::microseconds>(this->end - this->begin).count() << " ms." << std::endl;
+    std::cout << this->query_parser->result_size << " results returned in " << std::chrono::duration_cast<std::chrono::milliseconds>(this->end - this->begin).count() << " ms." << std::endl;
 }
 
 std::vector<std::string> split(std::string s){

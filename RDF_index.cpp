@@ -3,15 +3,15 @@
 #include <string.h>
 #include <iostream>
 
-#include "include/table.h"
+#include "include/RDF_index.h"
 #include "include/HashTable.h"
 
 
-Table::Table(){
+RDF_index::RDF_index(){
     this->table = new std::vector<int*>;
-    this->Is.resize(4);
-    this->Ip.resize(4);
-    this->Io.resize(4);
+    this->Is.resize(1024);
+    this->Ip.resize(1024);
+    this->Io.resize(1024);
     this->Isp = new HashTable(2);
     this->Iop = new HashTable(2);
     this->Ispo = new HashTable(3);
@@ -19,17 +19,17 @@ Table::Table(){
     this->size_Is = 0;
 }
 
-int Table::size_of_table(){
+int RDF_index::size_of_table(){
     return this->table->size();
 }
 
-void Table::resize(){
+void RDF_index::resize(){
     this->Is.resize(this->table->size() << 2);
     this->Ip.resize(this->table->size() << 2);
     this->Io.resize(this->table->size() << 2);
 }
 
-void Table::update_Isp(struct Triple t){
+void RDF_index::update_Isp(struct Triple t){
     if(this->Is[t.s] == 0){
         this->Is[t.s] = this->table->size();
         this->Isp->insert(t.s, t.p, Negect, this->table->size());
@@ -50,7 +50,7 @@ void Table::update_Isp(struct Triple t){
     }
 }
 
-void Table::update_Iop(struct Triple t){
+void RDF_index::update_Iop(struct Triple t){
     if(this->Io[t.o] == 0){
         this->Io[t.o] = this->table->size();
         this->Iop->insert(t.o, t.p, Negect, this->table->size());
@@ -71,7 +71,7 @@ void Table::update_Iop(struct Triple t){
     }
 }
 
-void Table::update_Ip(struct Triple t){
+void RDF_index::update_Ip(struct Triple t){
     if(this->Ip[t.p] == 0){
         this->Ip[t.p] = this->table->size();
     }
@@ -85,7 +85,7 @@ void Table::update_Ip(struct Triple t){
     }
 }
 
-void Table::insert(struct Triple t){
+void RDF_index::add(struct Triple t){
     int* T_new = new int[6];
     T_new[0] = t.s; T_new[1] = t.p; T_new[2] = t.o;
     T_new[3] = -1; T_new[4] = -1; T_new[5] = -1;
@@ -102,7 +102,7 @@ void Table::insert(struct Triple t){
     this->Ispo->insert(t.s, t.p, t.o, this->table->size());
 }
 
-void Table::print_table(){
+void RDF_index::print_table(){
     for (int i = 0; i < this->table->size(); i++){
         std::cout << i << ": " << this->table->at(i)[0] << " " << this->table->at(i)[1] << " " << this->table->at(i)[2] << " ";
         for(int j = 3; j < 6; j ++){
@@ -115,7 +115,7 @@ void Table::print_table(){
     }
 }
 
-inline void Table::evaluate_SYZ(struct Triple t, struct Triple& result, int& index){
+inline void RDF_index::evaluate_SYZ(struct Triple t, struct Triple& result, int& index){
     do{
         if(index == FirstSearch){
             COPY(result, index, this->table->at(this->Is[t.s] - 1), Nsp);
@@ -128,7 +128,7 @@ inline void Table::evaluate_SYZ(struct Triple t, struct Triple& result, int& ind
         index = EndSearch;
 }
 
-inline void Table::evaluate_SPZ(struct Triple t, struct Triple& result, int& index){
+inline void RDF_index::evaluate_SPZ(struct Triple t, struct Triple& result, int& index){
     if(this->Isp->search(t.s, t.p, Negect) <= -1){
         index = EndSearch;
         return;
@@ -143,7 +143,7 @@ inline void Table::evaluate_SPZ(struct Triple t, struct Triple& result, int& ind
         index = EndSearch;
 }
 
-inline void Table::evaluate_SPO(struct Triple t, struct Triple& result, int& index){
+inline void RDF_index::evaluate_SPO(struct Triple t, struct Triple& result, int& index){
     if(this->Ispo->search(t.s, t.p, t.o) != -1){
         COPY_TRIPLE(result, t);
         index = EndOfNode;
@@ -153,7 +153,7 @@ inline void Table::evaluate_SPO(struct Triple t, struct Triple& result, int& ind
     }
 }
 
-inline void Table::evaluate_XPO(struct Triple t, struct Triple& result, int& index){
+inline void RDF_index::evaluate_XPO(struct Triple t, struct Triple& result, int& index){
     if(index == FirstSearch){
         COPY(result, index, this->table->at(this->Iop->search(t.o, t.p, Negect) - 1), Nop);
     }
@@ -164,7 +164,7 @@ inline void Table::evaluate_XPO(struct Triple t, struct Triple& result, int& ind
         index = EndSearch;
 }
 
-inline void Table::evaluate_XYO(struct Triple t, struct Triple& result, int& index){
+inline void RDF_index::evaluate_XYO(struct Triple t, struct Triple& result, int& index){
     do{
         if(index == FirstSearch){
             COPY(result, index, this->table->at(this->Io[t.o] - 1), Nop);
@@ -177,7 +177,7 @@ inline void Table::evaluate_XYO(struct Triple t, struct Triple& result, int& ind
         index = EndSearch;
 }
 
-inline void Table::evaluate_SYO(struct Triple t, struct Triple& result, int& index){
+inline void RDF_index::evaluate_SYO(struct Triple t, struct Triple& result, int& index){
    if(this->size_Is < this->size_Io){
         do{
             if(index == FirstSearch){
@@ -204,7 +204,7 @@ inline void Table::evaluate_SYO(struct Triple t, struct Triple& result, int& ind
     }
 }
 
-inline void Table::evaluate_XPZ(struct Triple t, struct Triple& result, int& index){
+inline void RDF_index::evaluate_XPZ(struct Triple t, struct Triple& result, int& index){
     do{
         if(index == FirstSearch){
             COPY(result, index, this->table->at(this->Ip[t.p] - 1), Np);
@@ -217,7 +217,7 @@ inline void Table::evaluate_XPZ(struct Triple t, struct Triple& result, int& ind
         index = EndSearch;       
 }
 
-inline void Table::evaluate_SXX(struct Triple t, struct Triple& result, int& index, int& sub_index){
+inline void RDF_index::evaluate_SXX(struct Triple t, struct Triple& result, int& index, int& sub_index){
     if(index == FirstSearch)
         index = 1;
     if(sub_index == EndOfNode){
@@ -236,7 +236,7 @@ inline void Table::evaluate_SXX(struct Triple t, struct Triple& result, int& ind
     index = EndSearch;
 }
 
-inline void Table::evaluate_XXO(struct Triple t, struct Triple& result, int& index, int& sub_index){
+inline void RDF_index::evaluate_XXO(struct Triple t, struct Triple& result, int& index, int& sub_index){
     if(index == FirstSearch)
         index = 1;
     if(sub_index == EndOfNode){
@@ -255,7 +255,7 @@ inline void Table::evaluate_XXO(struct Triple t, struct Triple& result, int& ind
     index = EndSearch;
 }
 
-inline void Table::evaluate_XPX(struct Triple t, struct Triple& result, int& index, int& sub_index){
+inline void RDF_index::evaluate_XPX(struct Triple t, struct Triple& result, int& index, int& sub_index){
     if(index == FirstSearch)
         index = 1;
     if(sub_index == EndOfNode){
@@ -274,7 +274,7 @@ inline void Table::evaluate_XPX(struct Triple t, struct Triple& result, int& ind
     index = EndSearch;
 }
 
-inline void Table::evaluate_XXX(struct Triple t, struct Triple& result, int& index, int& sub_index){
+inline void RDF_index::evaluate_XXX(struct Triple t, struct Triple& result, int& index, int& sub_index){
     if(index == FirstSearch)
         index = 1;
 
@@ -290,7 +290,7 @@ inline void Table::evaluate_XXX(struct Triple t, struct Triple& result, int& ind
     index = EndSearch;
 }
 
-inline void Table::evaluate_XYZ(struct Triple t, struct Triple& result, int& index, int& sub_index){
+inline void RDF_index::evaluate_XYZ(struct Triple t, struct Triple& result, int& index, int& sub_index){
     if(index == FirstSearch){
         COPY_TABLE(result, this->table->at(0));
         index = 1;
@@ -303,7 +303,7 @@ inline void Table::evaluate_XYZ(struct Triple t, struct Triple& result, int& ind
         index = EndOfNode;     
 }
 
-void Table::evaluate(struct Triple t, struct Triple& result, int& index, int& sub_index){
+void RDF_index::evaluate(struct Triple t, struct Triple& result, int& index, int& sub_index){
     if((t.s >= 0 && this->Is.at(t.s) == 0) || (t.p >= 0 && this->Ip.at(t.p) == 0) || (t.o >= 0 && this->Io.at(t.o) == 0)){
         index = EndSearch;
         return;
@@ -365,7 +365,7 @@ void Table::evaluate(struct Triple t, struct Triple& result, int& index, int& su
 
 }
 
-void Table::print_I(std::vector<int>& vec){
+void RDF_index::print_I(std::vector<int>& vec){
     for(int i = 0; i < vec.size(); i++){
         if(vec[i] != 0)
             std::cout << i << ": " << vec[i]-1<< " ";
@@ -399,24 +399,24 @@ int main(){
     struct Triple t20 = {3, 6, 3};
 
     Table* table = new Table();
-    table->insert({3,1,3});    
-    table->insert(t2);
-    table->insert(t3);
-    table->insert({2,2,2});
-    table->insert(t4);
-    table->insert({1,1,2});
-    table->insert({3,3,2});  
-    table->insert({3,3,3});
-    table->insert({4,4,2});
-    table->insert(t0);
-    table->insert(t1);
-    table->insert(t5);
-    table->insert(t6);
-    table->insert(t7);
-    table->insert({4,4,4});
-    table->insert(t8);
-    table->insert(t9);
-    table->insert({2,1,2});
+    table->add({3,1,3});    
+    table->add(t2);
+    table->add(t3);
+    table->add({2,2,2});
+    table->add(t4);
+    table->add({1,1,2});
+    table->add({3,3,2});  
+    table->add({3,3,3});
+    table->add({4,4,2});
+    table->add(t0);
+    table->add(t1);
+    table->add(t5);
+    table->add(t6);
+    table->add(t7);
+    table->add({4,4,4});
+    table->add(t8);
+    table->add(t9);
+    table->add({2,1,2});
 
     table->print_table();
 

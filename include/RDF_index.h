@@ -1,5 +1,5 @@
-#ifndef TABLE_H
-#define TABLE_H
+#ifndef RDFINDEX_H
+#define RDFINDEX_H
 
 #include <iostream>
 #include <unordered_map>
@@ -36,9 +36,8 @@ struct Triple {
      }
 };
 
-struct Triple NULL_TRIPLE =  {-1, -1, -1};
 
-class Table{
+class RDF_index{
 
 private:
 
@@ -51,11 +50,11 @@ private:
     
 public:
 
-    Table();
+    RDF_index();
 
     int size_of_table();
 
-    void insert(struct Triple t);
+    void add(struct Triple t);
     void resize();
     void update_Isp(struct Triple t);
     void update_Iop(struct Triple t);

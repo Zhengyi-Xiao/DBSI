@@ -1,28 +1,32 @@
-#ifndef READ_TTL_H
-#define READ_TTL_H
+#ifndef Turtle_handler_H
+#define Turtle_handler_H
 
-#include <string.h>
 #include <iostream>
+#include <fstream>
 #include <unordered_map>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+
 #include <vector>
 
-#include "table.h"
+#include "RDF_index.h"
 
 #define FAIL    -1
 #define SUCCES  1
 
-class read_ttl{
+class Turtle_handler{
 
 public:
-    read_ttl();
+    Turtle_handler();
     int load(std::string file_name);
-    void tokenize(std::string s);
 
     std::vector<std::string>* idx2IRI;
     std::unordered_map<std::string, int>* IRI2idx;
 
     int counter;                // counter keeping the index for the main table
-    Table* table;               // the table containing the index table
+    RDF_index* table;               // the table containing the index table
 };
 
 

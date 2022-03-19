@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <iterator>
 
-#include "table.h"
+#include "RDF_index.h"
 
 #define XXX 8
 #define XPX 7
