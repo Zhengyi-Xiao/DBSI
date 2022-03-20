@@ -90,9 +90,12 @@ int main() {
     std::vector<std::string> token_input;
     std::cout << "> ";
     std::string input;
-    while(std::getline(std::cin, input)) { // quit the program with ctrl-d        
+    while(std::getline(std::cin, input)) { // quit the program with ctrl-d    
+        if(input == ""){
+            std::cout << ">";
+            continue;
+        }
         token_input = split(input);
-
 
         if(token_input[0] == "QUIT")
             return 0;

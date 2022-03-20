@@ -32,22 +32,37 @@ void SPARQL_engine::join_helper(std::unordered_map<int, int> & sigma, int i){
         struct Triple result;
         int index = FirstSearch; int sub_index = FirstSearch;
         while((index != EndOfNode && index != EndSearch)){
+            bool s = true; bool p = true; bool o = true;
             question = this->query->Tps->at(i-1);
-            if(sigma.count(question.s))
+            if(sigma.count(question.s)){
                 question.s = sigma[question.s];
-            if(sigma.count(question.p))
+                s = false;
+            }
+            if(sigma.count(question.p)){
                 question.p = sigma[question.p];
-            if(sigma.count(question.o))
+                p = false;
+            }
+            if(sigma.count(question.o)){
                 question.o = sigma[question.o];
+                o = false;
+            }
+                
             this->query->Turtle_handler->table->evaluate(question, result, index, sub_index);
-            std::unordered_map<int, int> omega;
-            omega.insert(sigma.begin(), sigma.end());    
-
+            
             if(index >= EndOfNode){
-                omega[question.s] = result.s;
-                omega[question.p] = result.p;
-                omega[question.o] = result.o;
-                join_helper(omega, i + 1);
+                if(s)
+                    sigma[question.s] = result.s;
+                if(p)
+                    sigma[question.p] = result.p;
+                if(o)
+                    sigma[question.o] = result.o;
+                join_helper(sigma, i + 1);
+                if(s)
+                    sigma.erase(question.s);
+                if(p)
+                    sigma.erase(question.p);
+                if(o)
+                    sigma.erase(question.o);
             }
         }        
     }

@@ -12,8 +12,8 @@ RDF_index::RDF_index(){
     this->Is.resize(1024);
     this->Ip.resize(1024);
     this->Io.resize(1024);
-    this->Isp = new HashTable(2);
-    this->Iop = new HashTable(2);
+    this->Isp  = new HashTable(2);
+    this->Iop  = new HashTable(2);
     this->Ispo = new HashTable(3);
     this->size_Io = 0;
     this->size_Is = 0;
@@ -88,12 +88,13 @@ void RDF_index::update_Ip(struct Triple t){
 void RDF_index::add(struct Triple t){
     int* T_new = new int[6];
     T_new[0] = t.s; T_new[1] = t.p; T_new[2] = t.o;
-    T_new[3] = -1; T_new[4] = -1; T_new[5] = -1;
+    T_new[3] = -1;  T_new[4] = -1;  T_new[5] = -1;
+    
     if(this->Ispo->search(t.s, t.p, t.o) != -1)
         return;
 
     this->table->push_back(T_new);
-    int i = this->table->size();
+
     if(this->table->size() < this->Is.size())
         this->resize();
     update_Isp(t);
@@ -304,10 +305,6 @@ inline void RDF_index::evaluate_XYZ(struct Triple t, struct Triple& result, int&
 }
 
 void RDF_index::evaluate(struct Triple t, struct Triple& result, int& index, int& sub_index){
-    if((t.s >= 0 && this->Is.at(t.s) == 0) || (t.p >= 0 && this->Ip.at(t.p) == 0) || (t.o >= 0 && this->Io.at(t.o) == 0)){
-        index = EndSearch;
-        return;
-    }
     
     if(t.s < 0 && t.p < 0 && t.o < 0){ // ?X?Y?Z
         if(t.s != t.p && t.s != t.o && t.p != t.o){
@@ -433,4 +430,5 @@ int main(){
 
     
     return 0;
-}*/
+}
+*/

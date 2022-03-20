@@ -18,6 +18,7 @@ void print_map(std::unordered_map<K, V> const &m){
 Turtle_handler::Turtle_handler(){
     this->table   = new RDF_index();
     this->idx2IRI = new std::vector<std::string>();
+    this->idx2IRI->resize(2048);
     this->IRI2idx = new std::unordered_map<std::string, int>();
     this->counter = 0;
 }
@@ -30,13 +31,13 @@ int Turtle_handler::load(std::string file_name){
     size_t len = 0;
     ssize_t read;
     const char* c_file_name = file_name.c_str();
-    //strcpy(c_file_name, file_name.c_str());
 
     fp = fopen(c_file_name, "r");
     if (fp == NULL){
         std::cout << "Unable to open the file" << file_name << std::endl;
         return FAIL;
     }
+
     std::string s_line;
     std::string token;
     struct Triple triple = {-1, -1, -1};
@@ -45,6 +46,7 @@ int Turtle_handler::load(std::string file_name){
         s_line = line;
         int start = 0; int end = 0;
         while(start < read){ // tokenized the line 
+            
             if(line[start] == '<' || line[start] == '\"'){
                 if(i == 3){
                     // the last triple should be "legal" but rather missing the last 
@@ -62,21 +64,24 @@ int Turtle_handler::load(std::string file_name){
                     ++end;
                 }
                 if(!find){
-                    std::cout << "There is a resources with invalid syntax (missing > or \". " << std::endl;
+                    std::cout << "There is a resources with invalid syntax (missing > or \"). " << std::endl;
                     return FAIL;
                 }
                 token = s_line.substr(start+1, end-start-1);
+                
                 if(!IRI2idx->count(token)){
                     (*IRI2idx)[token] = counter;
                     idx2IRI->push_back(token);
-                    counter++;
+                    ++counter;
                 }
+                
                 if(i == 0)
                     triple.s = (*IRI2idx)[token];
                 else if(i == 1)
                     triple.p = (*IRI2idx)[token];
                 else if(i == 2)
                     triple.o = (*IRI2idx)[token];
+                
                 ++i;
                 start = end;
             }
@@ -104,18 +109,6 @@ int Turtle_handler::load(std::string file_name){
 int main(){
     Turtle_handler* load_file = new Turtle_handler();
     load_file->load("test.ttl");
-    
-    for(auto kv : *(load_file->idx2IRI)){
-        std::cout << kv << " ";
-    }
-    std::cout << std::endl;
-
-    for(auto kv : *load_file->IRI2idx){
-        std::cout << kv.first << " " << kv.second << std::endl;
-    }
-    
-    load_file->table->print_table();
-    
     return 0;
 }
 */
