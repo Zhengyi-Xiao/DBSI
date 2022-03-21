@@ -18,7 +18,7 @@ void print_map(std::unordered_map<K, V> const &m){
 Turtle_handler::Turtle_handler(){
     this->table   = new RDF_index();
     this->idx2IRI = new std::vector<std::string>();
-    this->idx2IRI->resize(2048);
+    this->idx2IRI->resize(1024);
     this->IRI2idx = new std::unordered_map<std::string, int>();
     this->counter = 0;
 }
@@ -71,7 +71,9 @@ int Turtle_handler::load(std::string file_name){
                 
                 if(!IRI2idx->count(token)){
                     (*IRI2idx)[token] = counter;
-                    idx2IRI->push_back(token);
+                    if(counter > idx2IRI->size() - 1)
+                        idx2IRI->resize(idx2IRI->size() << 2);
+                    idx2IRI->at(i) = token;
                     ++counter;
                 }
                 
@@ -106,9 +108,20 @@ int Turtle_handler::load(std::string file_name){
 }
 
 /*
+#include <chrono>
+
 int main(){
     Turtle_handler* load_file = new Turtle_handler();
-    load_file->load("test.ttl");
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
+    load_file->load("LUBM-001-mat.ttl");
+    //load_file->table->print_table();
+    //load_file->table->print_I(load_file->table->Is);
+    //load_file->table->Isp->print_I();
+
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << " ms." << std::endl;
+
     return 0;
 }
 */

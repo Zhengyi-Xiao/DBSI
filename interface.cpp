@@ -90,7 +90,10 @@ int main() {
     std::vector<std::string> token_input;
     std::cout << "> ";
     std::string input;
-    while(std::getline(std::cin, input)) { // quit the program with ctrl-d    
+
+    interface->LOAD(split("LOAD LUBM-001-mat.ttl"));
+    
+    while(std::getline(std::cin, input)){ // quit the program with ctrl-d    
         if(input == ""){
             std::cout << ">";
             continue;

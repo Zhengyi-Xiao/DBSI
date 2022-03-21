@@ -21,7 +21,11 @@ void SPARQL_engine::join_helper(std::unordered_map<int, int> & sigma, int i){
     if(i >= this->query->num_Tps + 1){
         if(this->query->output){
             for(auto kv : *this->query->Voutput){
-                std::cout << "<" << this->query->Turtle_handler->idx2IRI->at(sigma[kv.second]) << "> ";
+                std::string output = this->query->Turtle_handler->idx2IRI->at(sigma[kv.second]);
+                if(output.size() > 5 and output.substr(0,4) == "http")
+                    std::cout << "<" << this->query->Turtle_handler->idx2IRI->at(sigma[kv.second]) << "> ";
+                else
+                    std::cout << "\"" << this->query->Turtle_handler->idx2IRI->at(sigma[kv.second]) << "\" ";
             }
             std::cout << std::endl;
         }

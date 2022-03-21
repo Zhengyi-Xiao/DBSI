@@ -29,7 +29,7 @@ void RDF_index::resize(){
     this->Io.resize(this->table->size() << 2);
 }
 
-void RDF_index::update_Isp(struct Triple t){
+inline void RDF_index::update_Isp(struct Triple t){
     if(this->Is[t.s] == 0){
         this->Is[t.s] = this->table->size();
         this->Isp->insert(t.s, t.p, Negect, this->table->size());
@@ -50,7 +50,7 @@ void RDF_index::update_Isp(struct Triple t){
     }
 }
 
-void RDF_index::update_Iop(struct Triple t){
+inline void RDF_index::update_Iop(struct Triple t){
     if(this->Io[t.o] == 0){
         this->Io[t.o] = this->table->size();
         this->Iop->insert(t.o, t.p, Negect, this->table->size());
@@ -71,7 +71,7 @@ void RDF_index::update_Iop(struct Triple t){
     }
 }
 
-void RDF_index::update_Ip(struct Triple t){
+inline void RDF_index::update_Ip(struct Triple t){
     if(this->Ip[t.p] == 0){
         this->Ip[t.p] = this->table->size();
     }
@@ -305,7 +305,15 @@ inline void RDF_index::evaluate_XYZ(struct Triple t, struct Triple& result, int&
 }
 
 void RDF_index::evaluate(struct Triple t, struct Triple& result, int& index, int& sub_index){
-    
+    if((t.s >= 0 && this->Is.at(t.s) == 0) || 
+       (t.p >= 0 && this->Ip.at(t.p) == 0) || 
+       (t.o >= 0 && this->Io.at(t.o) == 0) ||
+       (t.s >= 0 && t.p >= 0 && this->Isp->search(t.s, t.p, Negect) == -1) ||
+       (t.o >= 0 && t.p >= 0 && this->Iop->search(t.o, t.p, Negect) == -1)){
+        index = EndSearch;
+        return;
+    }
+
     if(t.s < 0 && t.p < 0 && t.o < 0){ // ?X?Y?Z
         if(t.s != t.p && t.s != t.o && t.p != t.o){
             evaluate_XYZ(t, result, index, sub_index);    
@@ -394,7 +402,6 @@ int main(){
     struct Triple t18 = {3, 4, 3};
     struct Triple t19 = {3, 1, 3};
     struct Triple t20 = {3, 6, 3};
-
     Table* table = new Table();
     table->add({3,1,3});    
     table->add(t2);
@@ -414,20 +421,16 @@ int main(){
     table->add(t8);
     table->add(t9);
     table->add({2,1,2});
-
     table->print_table();
-
     struct Triple t;
     int index = FirstSearch; int sub_index = FirstSearch;
     struct Triple q = {2, 1, 2};
-
     std::cout << "start search " << std::endl;
     while((index != EndOfNode && index != EndSearch)){
         table->evaluate(q, t, index, sub_index);
         if(index >= EndOfNode)
             std::cout << index << ": " << t.s << t.p << t.o << std::endl;
     }
-
     
     return 0;
 }

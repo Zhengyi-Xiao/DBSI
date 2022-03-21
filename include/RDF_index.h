@@ -41,14 +41,14 @@ class RDF_index{
 
 private:
 
+public:
+
     int size;
     int num_element;
     int size_Is, size_Io;
     std::vector<int*>* table;
     std::vector<int> Is, Ip, Io;
     HashTable* Isp,* Iop, *Ispo;
-    
-public:
 
     RDF_index();
 
