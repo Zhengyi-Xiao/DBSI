@@ -85,14 +85,14 @@ std::vector<std::string> split(std::string s){
 int main() {
 
     Interface* interface = new Interface();
-    SPARQL_engine* query_engine = new SPARQL_engine();
-        
+            
     std::vector<std::string> token_input;
     std::cout << "> ";
     std::string input;
 
     interface->LOAD(split("LOAD LUBM-001-mat.ttl"));
-    
+    //interface->SELECT(("SELECT ?X WHERE {    ?X  <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>             <http://swat.cse.lehigh.edu/onto/univ-bench.owl#GraduateStudent>  . ?X  <http://swat.cse.lehigh.edu/onto/univ-bench.owl#takesCourse>  <http://www.Department0.University0.edu/GraduateCourse0>          . }"));
+
     while(std::getline(std::cin, input)){ // quit the program with ctrl-d    
         if(input == ""){
             std::cout << ">";

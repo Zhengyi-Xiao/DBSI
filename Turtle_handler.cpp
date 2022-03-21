@@ -72,8 +72,8 @@ int Turtle_handler::load(std::string file_name){
                 if(!IRI2idx->count(token)){
                     (*IRI2idx)[token] = counter;
                     if(counter > idx2IRI->size() - 1)
-                        idx2IRI->resize(idx2IRI->size() << 2);
-                    idx2IRI->at(i) = token;
+                        idx2IRI->resize(idx2IRI->size() << 1);
+                    idx2IRI->at(this->counter) = token;
                     ++counter;
                 }
                 
