@@ -23,14 +23,25 @@ while U != ∅ do
 void Query_planner::plan_query(std::vector<struct Triple>& U, std::vector<struct Triple>& P){
     std::vector<int> B; std::vector<int> variables; std::vector<int> v_intersection;
     while(!U.empty()){
-        struct Triple t_best = NULL_TRIPLE; int score_best = 100;
+        struct Triple t_best = NULL_TRIPLE; int score_best = 100; bool intersected = false;
         for(auto t : U){
             int score = this->get_score(t, B);
             this->var(t, variables); this->intersection(variables, B, v_intersection);
-            if((t_best.s == -1 && t_best.p == -1 && t_best.o == -1) || 
-               (score < score_best || (variables.empty() || !v_intersection.empty()))){
-                   t_best = t; score_best = score;
-               }
+            if(t_best.s == -1 && t_best.p == -1 && t_best.o == -1){
+                intersected = !v_intersection.empty();
+                t_best = t; score_best = score;
+                continue;
+            }
+            if(intersected){
+                if(score < score_best && (variables.empty() || !v_intersection.empty())){
+                    t_best = t; score_best = score;
+                }
+            }
+            else{
+                if((variables.empty() || !v_intersection.empty())){
+                    t_best = t; score_best = score;
+                }                
+            }
         }
         P.push_back(t_best);
         this->var(t_best, variables);
@@ -114,10 +125,10 @@ int main(){
 
     struct Triple t1 = {X, 1, 2};
     struct Triple t2 = {Y, 1, 3};
-    struct Triple t3 = {Z, 4, 3};
-    struct Triple t4 = {X, 6, Z};
-    struct Triple t5 = {Z, 6, Y};
-    struct Triple t6 = {X, 6, Y};
+    struct Triple t3 = {X, 4, Y};
+    struct Triple t4 = {Y, 6, 7};
+    struct Triple t5 = {X, 5, Z};
+    
 
     std::vector<struct Triple> U;
     U.push_back(t1);
@@ -125,13 +136,13 @@ int main(){
     U.push_back(t3);
     U.push_back(t4);
     U.push_back(t5);
-    U.push_back(t6);
+    
 
     std::vector<struct Triple> P;
     planner->plan_query(U, P);
 
     for(auto kv : P){
-        std::cout << kv.s << " " << kv.p << " " << kv.o << std::endl;
+        std::cout <<  kv.s << " " << kv.p << " " << kv.o << std::endl;
     }
 
     return 0;

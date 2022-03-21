@@ -11,4 +11,4 @@ DB: SPARQL_engine.cpp query_parser.cpp Turtle_handler.cpp RDF_index.cpp HashTabl
 	./DB.exe
 
 clean:
-	rm  DB.exe
+	rm  DB.exe a.out
