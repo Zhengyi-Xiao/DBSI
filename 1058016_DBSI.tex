@@ -31,6 +31,9 @@
 \usepackage{amsthm}
 \usepackage{blindtext}
 \usepackage{hyperref}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
 
 \newtheorem{definition}{Definition}
 \newtheorem{theorem}{Theorem}
@@ -62,10 +65,139 @@ Your degree: MSc Advanced Computer Science
 	
 	Six index maps are also maintained. $I_s$, $I_p$, and $I_o$ store the head of the $sp$-list, $p$-list, and $op$-list, respectively. $I_{sp}$ maps $s$ and $p$ to the first occurrence of the triple with the same $s$ and $p$ in the $sp$-list. So does $I_{op}$. $I_{spo}$ stores the row number of each triple in the table. 
 	
-	\item 
-	\end{enumerate}
+	\item {\large A}DD(Triple $t$) consists of two parts; first, append a new row to the end of the RDF-index table, and second, associates the new row with all six index maps and alter the pointer columns, $N_{sp}$, $N_{op}$, and $N_p$, to point to the correct row.
 	
-	
+	Since there is no need to worry about the concurrency in our setting, the RDF-index table is maintained as a fixed size vector of int list of size 6 with each position stands for different columns. Therefore, for each time we add a triple into the table, we simply append it to the last. However, if the triple is already in the $I_{spo}$ map, we skip it. When the size reaches its limit, the entire table will resize. 
+
+\begin{algorithm}[H]
+\caption{ADD (t)}\label{alg:cap}
+\begin{algorithmic}
+
+\If{$t$ in $I_{spo}$} \Comment{$t = (s, p, o)$ is a triple.}
+\State \Return
+\EndIf
+
+\State $i$ = \# of elements in the triple-table
+
+\If{$i + 1 > $ the size of the triple-table}
+\State resize the triple table
+\EndIf
+\State $T_{new}$ = $[t.s, t.p, t.o, -1, -1, -1]$ \Comment{The last three columns are left for update later.}
+\State triple-table[i] = $T_{new}$
+\State $I_{spo}[t] = i$
+\State Update remaining indexes
+\end{algorithmic}
+\end{algorithm}
+
+The columns, $N_{sp}$, $N_{op}$, and $N_p$, are maintained in a linked-list-like manner and are updated simultaneously with the index maps. Take $N_{op}$ for example, if $T_{new}$ does not appear in the $I_o$ and $I_{op}$, it means that  $T_{new}$ is a new triple that the triple table never see before. Therefore, we insert $T_{new}$ into the index map $I_o$ and $I_{op}$ (case1). If we found a $T$ with $T.o = T_{new}.o$ and $T.o = T_{new}.p$, then we insert $T_{new}$ after $T$, and point the next of $T_{new}$ to the original next of the $T$ (case3). A special case is that when there is no next for $T$ and it is handled in case 2 of the Algorithm \eqref{alg:updateIop}. The case of $M_{sp}$ and $N_p$ is similar.
+
+\begin{algorithm}[H]
+\caption{Update $I_{op}$($T_{new}$)}\label{alg:updateIop}
+\begin{algorithmic}
+\State $T$ = the first triple with $T.o = T_{new}.o$ and $T.o = T_{new}.p$
+\If{$T$ does not exist}\Comment{Case 1}
+\State make $T_{new}$ the head of $I_o$ and $I_{op}$ 
+\EndIf
+
+\If{$T$ does not have $T_{next}$}\Comment{Case 2}
+\State make $T_{new}$ the head of $I_o$ and $I_{op}$
+\State $T_{new}.N_{op} = T$
+\EndIf
+
+\If{$T$ has $T_{next}$} \Comment{Case 3}
+\State $T_{next} = T.N_{op}$
+\State $T_{new}.N_{op} = T_{next}$
+\EndIf
+
+\end{algorithmic}
+\end{algorithm}
+
+There 
+
+\end{enumerate}
+
+\item[3.a]
+\begin{enumerate}
+\item 
+
+Hardware and Software Configuration:
+
+\begin{enumerate}
+\item Model Identifier:	MacBookPro14,3
+
+\item Processor Name:	Quad-Core Intel Core i7
+
+\item Processor Speed:	2.9 GHz
+
+\item Number of Processors:	1
+
+\item Total Number of Cores:	4
+
+\item L2 Cache (per Core):	256 KB
+
+\item L3 Cache:	8 MB
+
+\item Memory:	16 GB
+
+\item Operating System: macOS Big Surf, Version 11.6 (20G165)
+
+\item Compiler Version: Apple clang version 11.0.0 (clang-1100.0.33.8)
+
+\end{enumerate}
+
+\item Test Protocol:
+
+\begin{enumerate}
+\item Turn off all irrelevant applications.
+\item Start a clean terminal.
+\item make all and run the output file.
+\item If it is measuring the time needed to load and index thedata, markdown the time and repeat this process for 10 times. Take off the highest and the lowest and find the average. 
+\item To measure the time needed to evaluate the query, we choose COUNT instead of SELECT and for each query, we markdown the time and repeat this process for 10 times. Take off the highest and the lowest and find the average. 
+\end{enumerate}
+
+\end{enumerate}
+
+\item[3.b] The time needed to load and index the data and the time needed to produce all query answers for each RDF graph and query are showed in Table 1 and Table 2, respectively.
+
+\begin{table}[H]\centering
+\begin{tabular}{|l|l|l|l|}
+\hline
+                   & LUBM-010-mat & LUBM-010-mat & LUBM-010-mat \\ \hline
+Load \& Index Time & 1064         & 11879        & 122583       \\ \hline
+\end{tabular}
+\caption{Time needed to load and index the data in ms.}
+\end{table}
+
+
+
+\begin{table}[H]\centering
+\begin{tabular}{|l|l|l|l|}
+\hline
+    & LUBM-001-mat & LUBM-010-mat & LUBM-100-mat \\ \hline
+q1  & 8            & 95           & 817          \\ \hline
+q2  & 22           & 393          & 25387        \\ \hline
+q3  & 25           & 261          & 2533         \\ \hline
+q4  & 2            & 26           & 211          \\ \hline
+q5  & 37           & 349          & 3489         \\ \hline
+q6  & 25           & 254          & 2376         \\ \hline
+q7  & 133          & 1375         & 14250        \\ \hline
+q8  & 128          & 1060         & 11367        \\ \hline
+q9  & 250          & 2618         & 26922        \\ \hline
+q10 & 29           & 328          & 3305         \\ \hline
+q11 & 1            & 13           & 119          \\ \hline
+q12 & 0            & 2            & 27           \\ \hline
+q13 & 35           & 322          & 3485         \\ \hline
+q14 & 18           & 194          & 1809         \\ \hline
+\end{tabular}
+\caption{Time needed to produce  all query answers in ms.}
+\end{table}
+
+\item[3.c]
+
+\begin{enumerate}
+\item There
+\end{enumerate}
+
 \end{enumerate}
 
 
