@@ -114,6 +114,64 @@ The columns, $N_{sp}$, $N_{op}$, and $N_p$, are maintained in a linked-list-like
 
 There 
 
+
+
+\end{enumerate}
+\item 
+\begin{enumerate}
+\item RDF indexing data structure that implements Add and Evaluate functions.
+
+This component is included in RDF\_index.cpp, in which ADD and EVALUATE are implemented as suggested in the problem. There are a few things that is slightly different from the paper. 
+
+1) I used XXHASH\footnote{https://cyan4973.github.io/xxHash/} by Facebook instead of Jenkings hashing, because it achieves state-of-the-art excellent performance on both long and small inputs. 
+
+2) Instead of open addressing, I eventually choose std::unordered\_map for index maps $I_{sp}$, $I_{op}$ and $I_{spo}$. I had an open addressing hash implemented in HashTable.cpp and HashTable.h (attached in the submission), but it was much slower than the unordered\_map so I changed it after one update. 
+
+3) To match the patterns like $\langle X, Y, Z\rangle$, the paper suggests to iterate over the triple table; if we want $X = Y$,  we skip those $X\neq Y$. I modify this a little bit to improve the efficiency. Again, $\langle X, X, Z\rangle$, for example, we first iterate $I_s$, and for each $s$ in $I_s$, we find if $I_{sp}$ includes hash($s, s$), if yes, we traverse over the triple table. As shown in the pseudo-code in Algorithm \eqref{alg:evaluateXXP}.
+
+\begin{algorithm}[H]
+\caption{Evaluate $\langle X, Y, Z\rangle$}\label{alg:evaluateXXP}
+\begin{algorithmic}
+\For{$s$ in $I_s$}
+\State $i = $ hash($s, s$)
+\If{$i$ in $I_{sp}$}	
+\State Evaluate\_SPZ($s, s$) \Comment{Evaluate\_SPZ }
+\EndIf
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+$\langle X, Y, Y\rangle$ and $\langle X, Y, X\rangle$ are similar. For $\langle X, X, X\rangle$, we only need to traverse  $s$ in $I_s$ and find if $\langle s, s, s\rangle$ is in $I_{spo}$ as shown in  Algorithm \eqref{alg:evaluateXXX}.
+
+\begin{algorithm}[H]
+\caption{Evaluate $\langle X, X, X\rangle$}\label{alg:evaluateXXX}
+\begin{algorithmic}
+\For{$s$ in $I_s$}
+\State Evaluate\_SPO($s, s, s$) 
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\item The engine for evaluating BGP SPARQL queries.
+
+This part is in the files SPARQL\_engine.cpp. And is implemented strictly based on the model answer. A few additional lines are added for printing or improving performance.
+
+\item The greedy join order optimization query planner.
+
+I see what the model answer is trying to say but I believe there are some minor errors so I change it slightly but it is still $O(n)$, where $n$ is the number of triple patterns we try to fit. 
+
+\item The component for parsing and importing Turtle files.
+
+This part is included in query\_parser.cpp. My parser not only read the query but also check if the triple patterns are correct such as if the query is asking for something that is not presented in the database, it will throw a warning right away instead of feeding it into the query engine to create overhead. 
+
+\item The parser for SPARQL queries
+
+This part is included in interface.cpp.
+
+\item The component implementing the command line
+
+This part is included in interface.cpp.
+
 \end{enumerate}
 
 \item[3.a]
