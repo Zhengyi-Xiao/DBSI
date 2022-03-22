@@ -1,4 +1,4 @@
-#include "include/RDF_index.h"
+#include "../include/RDF_index.h"
 
 RDF_index::RDF_index(){
     this->table = new std::vector<int*>;

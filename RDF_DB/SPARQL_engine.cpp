@@ -1,4 +1,4 @@
-#include "include/SPARQL_engine.h"
+#include "../include/SPARQL_engine.h"
 
 SPARQL_engine::SPARQL_engine(){
     this->query = NULL;

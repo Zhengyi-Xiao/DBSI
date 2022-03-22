@@ -1,4 +1,4 @@
-#include "include/query_parser.h"
+#include "../include/query_parser.h"
 
 
 Query_parser::Query_parser(class Turtle_handler* Turtle_handler){

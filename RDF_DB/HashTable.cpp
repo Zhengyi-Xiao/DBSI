@@ -1,5 +1,5 @@
-#include "include/HashTable.h"
-#include "include/xxh3.h"
+#include "../include/HashTable.h"
+#include "../include/xxh3.h"
 #include <vector>
 
 HashTable::HashTable(int tuple_type){

@@ -1,4 +1,4 @@
-#include "include/query_planner.h"
+#include "../include/query_planner.h"
 
 struct Triple NULL_TRIPLE =  {-1, -1, -1};
 
