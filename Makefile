@@ -3,12 +3,12 @@ CFLAGS = -Wall
 DEBUG = -DDEBUG -g
 VERSION = -std=c++11
 OPT = -o3
+SRC = RDF_DB/
 
 all: DB
 
-DB: SPARQL_engine.cpp query_parser.cpp Turtle_handler.cpp RDF_index.cpp HashTable.cpp  query_planner.cpp interface.cpp 
-	$(CC) $(CFLAGS) $(VERSION) $(OPT) SPARQL_engine.cpp query_parser.cpp Turtle_handler.cpp RDF_index.cpp HashTable.cpp  query_planner.cpp interface.cpp -o DB.out
-	./DB.out
+DB: $(SRC)SPARQL_engine.cpp $(SRC)query_parser.cpp $(SRC)Turtle_handler.cpp $(SRC)RDF_index.cpp $(SRC)query_planner.cpp interface.cpp 
+	$(CC) $(CFLAGS) $(VERSION) $(OPT) $(SRC)SPARQL_engine.cpp $(SRC)query_parser.cpp $(SRC)Turtle_handler.cpp $(SRC)RDF_index.cpp  $(SRC)query_planner.cpp interface.cpp -o RDF_DB.out
 
 clean:
-	rm  DB.out a.out
+	rm  RDF_DB.out a.out
