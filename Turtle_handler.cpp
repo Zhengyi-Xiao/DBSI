@@ -1,26 +1,11 @@
-#include <iostream>
-#include <fstream>
-#include <unordered_map>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
-
 #include "include/Turtle_handler.h"
 
-template<typename K, typename V>
-void print_map(std::unordered_map<K, V> const &m){
-    for (auto const &pair: m) {
-        std::cout << "{" << pair.first << ": " << pair.second << "}\n";
-    }
-}
 
 Turtle_handler::Turtle_handler(){
     this->table   = new RDF_index();
     this->idx2IRI = new std::vector<std::string>();
     this->idx2IRI->resize(1024);
     this->IRI2idx = new std::unordered_map<std::string, int>();
-    this->counter = 0;
 }
 
 // the function to load the file
@@ -71,9 +56,9 @@ int Turtle_handler::load(std::string file_name){
                 
                 if(!IRI2idx->count(token)){
                     (*IRI2idx)[token] = counter;
-                    if(counter > idx2IRI->size() - 1)
+                    if(counter + 2> idx2IRI->size())
                         idx2IRI->resize(idx2IRI->size() << 1);
-                    idx2IRI->at(this->counter) = token;
+                    (*idx2IRI)[this->counter] = token;
                     ++counter;
                 }
                 
@@ -106,20 +91,3 @@ int Turtle_handler::load(std::string file_name){
         free(line);
     return SUCCES;
 }
-
-
-#include <chrono>
-/*
-int main(){
-    Turtle_handler* load_file = new Turtle_handler();
-    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-    load_file->load("LUBM-001-mat.ttl");
-    load_file->table->print_table();
-    //load_file->table->print_I(load_file->table->Is);
-    //load_file->table->Isp->print_I();
-
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << " ms." << std::endl;
-
-    return 0;
-}*/

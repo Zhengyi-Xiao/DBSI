@@ -16,9 +16,10 @@
 #define Np          4
 #define Nop         5
 #define EndOfNode   -1
-#define Negect      -1
 #define FirstSearch -2
 #define EndSearch   -3
+
+#define INITIAL_CAP 16384
 
 #define X           -2
 #define Y           -3
@@ -41,7 +42,7 @@ struct key_hash : public std::unary_function<Triple, std::size_t>{
         std::memcpy(concatenated, (char*)&t.s, sizeof(int));
         std::memcpy(concatenated+4, (char*)&t.p, sizeof(int));
         std::memcpy(concatenated+8, (char*)&t.o, sizeof(int));
-        return XXH32(concatenated, 12, 0);
+        return XXH32(concatenated, 12, 0); // XXHASH is used
     }
 };
  
@@ -50,25 +51,21 @@ struct key_equal : public std::binary_function<Triple, Triple, bool>{
         return (t1.s == t2.s && t1.p == t2.p && t1.o == t2.o);
     }
 };
- 
 
 typedef std::unordered_map<const Triple, int, key_hash, key_equal> map_t;
 
 class RDF_index{
 
 private:
-
-public:
-
-    int size;
-    int num_element;
-    int size_Is, size_Io;
+    int num_element = 0;
+    int size_Is = 0; 
+    int size_Io = 0;
     std::vector<int*>* table;
     std::vector<int> *Is, *Ip, *Io;
     map_t *Isp, *Iop, *Ispo;
-    RDF_index();
 
-    int size_of_table();
+public:
+    RDF_index();
 
     void add(struct Triple t);
     void resize();
@@ -92,9 +89,7 @@ public:
     void evaluate_XPX(struct Triple t, struct Triple& result, int& index, int& sub_index);
     void evaluate_XXX(struct Triple t, struct Triple& result, int& index, int& sub_index);
 
-    void print_table();
-    void print_I(std::vector<int>* vec);
-    void print_map();
+    int size_of_table();
 
 };
 

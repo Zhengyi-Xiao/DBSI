@@ -26,10 +26,6 @@ void Interface::LOAD(std::vector<std::string> token_input){
     }
 }
 
-void Interface::PRINT_TABLE(std::vector<std::string> token_input){
-    this->ttl->table->print_table();
-}
-
 void Interface::SELECT(std::string input){
     std::cout << "----------" << std::endl;
     this->begin = std::chrono::steady_clock::now();
@@ -89,11 +85,8 @@ int main() {
     std::vector<std::string> token_input;
     std::cout << "> ";
     std::string input;
-    //interface->LOAD(split("LOAD LUBM-001-mat.ttl"));
-    //interface->COUNT("COUNT ?X ?Y ?Z WHERE {    ?X  <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>                         <http://swat.cse.lehigh.edu/onto/univ-bench.owl#GraduateStudent>  . ?Y  <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>                         <http://swat.cse.lehigh.edu/onto/univ-bench.owl#University>       . ?Z  <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>                         <http://swat.cse.lehigh.edu/onto/univ-bench.owl#Department>       . ?X  <http://swat.cse.lehigh.edu/onto/univ-bench.owl#memberOf>                 ?Z                                                                .    ?Z  <http://swat.cse.lehigh.edu/onto/univ-bench.owl#subOrganizationOf>        ?Y                                                                . ?X  <http://swat.cse.lehigh.edu/onto/univ-bench.owl#undergraduateDegreeFrom>  ?Y                                                                .}");
 
-
-    while(std::getline(std::cin, input)){ // quit the program with ctrl-d    
+    while(std::getline(std::cin, input)){ 
         if(input == ""){
             std::cout << ">";
             continue;
@@ -105,9 +98,6 @@ int main() {
         else{
             if(token_input[0] == "LOAD"){
                 interface->LOAD(token_input);
-            }
-            else if(token_input[0] == "PRINT"){
-                interface->PRINT_TABLE(token_input);
             }
             else if(token_input[0] == "SELECT"){
                 interface->SELECT(input);                

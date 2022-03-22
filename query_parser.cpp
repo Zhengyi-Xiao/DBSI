@@ -1,21 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <iostream>
-#include <string>
-#include <sstream>
-#include <vector>
-#include <iterator>
-
 #include "include/query_parser.h"
-#include "include/SPARQL_engine.h"
 
-template<typename K, typename S>
-void print_map(std::map<K, S> const &m){
-    for (auto const &pair: m) {
-        std::cout << "{" << pair.first << ": " << pair.second << "}\n";
-    }
-}
 
 Query_parser::Query_parser(class Turtle_handler* Turtle_handler){
     this->Turtle_handler = Turtle_handler;
@@ -26,6 +10,8 @@ void Query_parser::set_output(bool output){
     this->output = output;
 }
 
+// There are some robustness in the parser making some illegal query, including checking one does not exist
+// is handled in the parser.
 int Query_parser::process(std::string query){
     this->num_Tps = 0;
     this->num_Vs = 0;
@@ -138,54 +124,3 @@ int Query_parser::process(std::string query){
 
     return SUCCES;
 }
-
-/*
-int main(){
-    //std::string query = "SELECT ?X ?Y WHERE { ?X <hasSon> ?Y . }";
-    //std::string query2 = "SELECT ?X ?Y ?Z WHERE { ?X <hasPet> ?Y . ?Y <hasDaughter> ?Z . ?X <marriedTo> ?Z . }";
-    Turtle_handler* ttl = new Turtle_handler();
-    ttl->load("test.ttl");
-    //ttl->table->print_table();
-
-    std::string query = "SELECT ?X ?Z WHERE { ?X <hasAge> ?Y . ?Z <hasAge> ?Y . }";
-    //query = "SELECT ?X ?Y WHERE { <Stewie>   <loves> ?Y . ?Y <loves> ?X . }";
-    
-    for(auto kv : *ttl->idx2IRI){
-        std::cout << kv << std::endl;
-    }
-    std::cout << ttl->idx2IRI->size() << std::endl;
-    Query_parser* q = new Query_parser(ttl);
-    //q->set_output(false);
-    q->process(query);
-
-    print_map(*q->Vs);
-    print_map(*q->Voutput);
-    
-    std::cout << "Triple Patterns are " << std::endl;
-    for (auto i: *q->Tps)
-        std::cout << i.s << ' ' << i.p << ' ' << i.o << ' ' << std::endl;
-    
-    struct Triple result;
-
-    struct Triple t;
-    int index = FirstSearch; int sub_index = FirstSearch;
-    struct Triple q1 = {0, 3, X};
-
-    std::cout << "start search " << std::endl;
-    while((index != EndOfNode && index != EndSearch)){
-        ttl->table->evaluate(q1, t, index, sub_index);
-        if(index >= EndOfNode)
-            std::cout << index << ": " << t.s << " " << t.p << " " << t.o << std::endl;
-    }
-    
-    SPARQL_engine* query_engine = new SPARQL_engine();
-    query_engine->join(q);
-
-    //q->join();
-    
-    return 0;
-}*/
-//                   +
-// 4 0 6 34 719 7790 67 7790 208 4 224 15 1 5916
-// 1   1 1   1    1  1   1    1   1  1  1  1  1 
-

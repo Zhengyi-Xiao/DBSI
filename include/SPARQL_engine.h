@@ -10,12 +10,14 @@
 
 class SPARQL_engine{
 
+private:
+    Query_parser* query;
+
 public:
     SPARQL_engine();
     void join(Query_parser* query);
     void join_helper(std::unordered_map<int, int>& sigma, int i);
 
-    Query_parser* query;
 };
 
 

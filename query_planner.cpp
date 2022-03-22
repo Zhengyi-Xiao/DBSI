@@ -7,18 +7,8 @@ Query_planner::Query_planner(){
 }
 
 /*
-The greedy plan is strictly implemented based on the model answer. 
-Require: set U of unprocessed triple patterns
-P ← [], B ← ∅
-while U != ∅ do
-    tbest ← ⊥, scorebest ← 100
-    for each unprocessed triple pattern t ∈ U do
-        score ← the position of t in ≺ where the variables in B are considered bound
-        if tbest = ⊥, or score < scorebest and either var(t) = ∅ or var(t) ∩ B ̸= ∅ then
-            tbest ← t, scorebest ← score
-    append tbest to P
-    B ← B ∪ var(tbest)
-    U ← U \ {tbest}
+The greedy plan is partially implemented based on the model answer. 
+To see what I changed, please see the report. It is still O(N)
 */
 void Query_planner::plan_query(std::vector<struct Triple>& U, std::vector<struct Triple>& P){
     std::vector<int> B; std::vector<int> variables; std::vector<int> v_intersection;
@@ -117,34 +107,4 @@ void Query_planner::difference(std::vector<struct Triple>& U, struct Triple t){
             break;
         }
     }
-} 
-
-/*
-int main(){
-    Query_planner* planner = new Query_planner();
-
-    struct Triple t1 = {X, 1, 2};
-    struct Triple t2 = {Y, 1, 3};
-    struct Triple t3 = {X, 4, Y};
-    struct Triple t4 = {Y, 6, 7};
-    struct Triple t5 = {X, 5, Z};
-    
-
-    std::vector<struct Triple> U;
-    U.push_back(t1);
-    U.push_back(t2);
-    U.push_back(t3);
-    U.push_back(t4);
-    U.push_back(t5);
-    
-
-    std::vector<struct Triple> P;
-    planner->plan_query(U, P);
-
-    for(auto kv : P){
-        std::cout <<  kv.s << " " << kv.p << " " << kv.o << std::endl;
-    }
-
-    return 0;
 }
-*/

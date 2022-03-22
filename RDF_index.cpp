@@ -1,34 +1,26 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <iostream>
-#include <chrono>
-
 #include "include/RDF_index.h"
-
 
 RDF_index::RDF_index(){
     this->table = new std::vector<int*>;
-    this->table->resize(16384);
+    this->table->resize(INITIAL_CAP);
     this->Is = new std::vector<int>;
-    this->Is->resize(16384);
+    this->Is->resize(INITIAL_CAP);
     this->Ip = new std::vector<int>;
-    this->Ip->resize(16384);
+    this->Ip->resize(INITIAL_CAP);
     this->Io = new std::vector<int>;
-    this->Io->resize(16384);            
+    this->Io->resize(INITIAL_CAP);            
 
     this->Isp  = new map_t();
     this->Iop  = new map_t();
     this->Ispo = new map_t();
-    this->size_Io = 0;
-    this->size_Is = 0;
-    this->num_element = 0;
 }
 
+// Return the size of the RDF index table
 int RDF_index::size_of_table(){
     return this->num_element;
 }
 
+// Resize the RDF index table and three index lists
 void RDF_index::resize(){
     int current_size = this->table->size();
     this->table->resize(current_size << 1);
@@ -37,63 +29,70 @@ void RDF_index::resize(){
     this->Io->resize(current_size << 1);
 }
 
+// Update Isp index
 inline void RDF_index::update_Isp(struct Triple t){
     t.o = 0;
-    if((*this->Is)[t.s] == 0){
+    if((*this->Is)[t.s] == 0){ // if it is the first occurrence， create a new index for Is also
         (*this->Is)[t.s] = this->num_element;
         (*this->Isp)[t] = this->num_element;
         ++this->size_Is;
     }
-    else if(this->Isp->find(t) != this->Isp->end()){
+    else if(this->Isp->find(t) != this->Isp->end()){ // Algorithm 4 in the paper
         if((*this->table)[(*this->Isp)[t] - 1][Nsp] != EndOfNode)
             (*this->table)[this->num_element - 1][Nsp] = (*this->table)[(*this->Isp)[t] - 1][Nsp];
         (*this->table)[(*this->Isp)[t] - 1][Nsp] = this->num_element - 1;
     }
-    else{
+    else{ // special case when only the head of the linked list exists, in such case, makes the new node the next
         (*this->Isp)[t] = this->num_element;
         (*this->table)[this->num_element - 1][Nsp] = (*this->Is)[t.s] - 1;
         (*this->Is)[t.s] = this->num_element;
     }
 }
 
+// Update Iop index
 inline void RDF_index::update_Iop(struct Triple t){
     t.s = 0;
-    if((*this->Io)[t.o] == 0){
+    if((*this->Io)[t.o] == 0){  // if it is the first occurrence， create a new index for Io also
         (*this->Io)[t.o] = this->num_element;
         (*this->Iop)[t] = this->num_element;
         ++this->size_Io;
     }
-    else if(this->Iop->find(t) != this->Iop->end()){
+    else if(this->Iop->find(t) != this->Iop->end()){ // Algorithm 4 in the paper
         if((*this->table)[(*this->Iop)[t] - 1][Nop] != EndOfNode)
             (*this->table)[this->num_element - 1][Nop] = (*this->table)[(*this->Iop)[t] - 1][Nop];
         (*this->table)[(*this->Iop)[t] - 1][Nop] = this->num_element - 1;
     }
-    else{
+    else{ // special case when only the head of the linked list exists, in such case, makes the new node the next
         (*this->Iop)[t] = this->num_element;
         (*this->table)[this->num_element - 1][Nop] = (*this->Io)[t.o] - 1;
         (*this->Io)[t.o] = this->num_element;
     }
 }
 
+// Update the Ip index list
 inline void RDF_index::update_Ip(struct Triple t){
-    if((*this->Ip)[t.p] == 0){
+    if((*this->Ip)[t.p] == 0){ // speical case when there is no element in the list
         (*this->Ip)[t.p] = this->num_element;
     }
-    else{
+    else{ // Algorithm 4 in the paper
         if((*this->table)[(*this->Ip)[t.p] - 1][Np] != EndOfNode)
             (*this->table)[this->num_element - 1][Np] = (*this->table)[(*this->Ip)[t.p] - 1][Np];
         (*this->table)[(*this->Ip)[t.p] - 1][Np] = this->num_element - 1;
     }
 }
 
+// Add(s, p, o) that allows inserting triples into the database
 void RDF_index::add(struct Triple t){
     int* T_new = new int[6];
-    T_new[0] = t.s; T_new[1] = t.p; T_new[2] = t.o;
-    T_new[3] = -1;  T_new[4] = -1;  T_new[5] = -1;
+    T_new[0] = t.s;        T_new[1] = t.p;        T_new[2] = t.o;
+    T_new[3] = EndOfNode;  T_new[4] = EndOfNode;  T_new[5] = EndOfNode;
     
+    // Check if (s, p, o) is in the DB already by checking Ispo index
+    // If the triple is already in the DB, skip it. (Duplicate Removal)
     if(this->Ispo->find(t) != this->Ispo->end())
         return;
 
+    // Resize the table when the table is not large enough
     if(this->table->size() < (this->num_element + 2))
         resize();
 
@@ -101,61 +100,32 @@ void RDF_index::add(struct Triple t){
 
     ++this->num_element;
 
+    // update all six index lists accordingly
     update_Isp(t);
     update_Iop(t);
     update_Ip(t);
-
     this->Ispo->emplace(t, this->num_element);
-
 }
 
-void RDF_index::print_map(){
-    for(auto kv : *this->Isp){
-        std::cout << kv.first.s << " " << kv.first.p << " " << kv.first.o << ": " << kv.second << std::endl;
-    }
-}
-#include <fstream>
-
-void RDF_index::print_table(){
-
-  if(true){
-    std::ofstream MyFile("filename.txt");
-        for(auto kv : *this->Ispo){
-            MyFile << kv.first.s << " " << kv.first.p << " " << kv.first.o << " " << kv.second << '\n';
-
-        }
-  MyFile.close();
-
-    }
-
-    if(false){
-        std::ofstream MyFile("filename2.txt");
-
-            for (int i = 0; i < this->Is->size(); i++){
-                MyFile << i << ": " << this->Is->at(i)  << " ";
-
-            MyFile << "\n";
-            }
-  MyFile.close();
-
-    }
-
-}
-
-
+// The following evaluate functions are implemented strictly based on what paper described.
+// Therefore, only the first one is commented.
+// Input:  Triple Pattern: (s, p, o)
+// Output: Result: (s', p', o')
+//         Index: pointer to the next
 inline void RDF_index::evaluate_SYZ(struct Triple t, struct Triple& result, int& index){
     do{
         if(index == FirstSearch){
-            if((*this->Is)[t.s] == 0){
+            if((*this->Is)[t.s] == 0){ // if s is not in the Is list, return
                 index = EndSearch;
                 return;
-            }
+            } // otherwise, find the head of the Is list in the table, copy the value to the output
             COPY(result, index, (*this->table)[(*this->Is)[t.s] - 1], Nsp);
         }
-        else{
+        else{ // find the next pointer by reading Nsp column in the table
             COPY(result, index, (*this->table)[index], Nsp);
         }
     } while (t.p == t.o && result.p != result.o && index > EndOfNode);
+    // if the result does not match the pattern, return EndSearch
     if(t.p == t.o && result.p != result.o)
         index = EndSearch;
 }
@@ -272,15 +242,21 @@ inline void RDF_index::evaluate_XPZ(struct Triple t, struct Triple& result, int&
         index = EndSearch;       
 }
 
+// Instead of matching the pattern <x, y, z> by iterating over the triple table,
+// I reused EVALUTE functions in the previous part. For example, to math the 
+// pattern <s, x, x>, we fisrt iterate Is list, and for each index in the Is list
+// we evaluat(s, x, x). The rest follows.
 inline void RDF_index::evaluate_SXX(struct Triple t, struct Triple& result, int& index, int& sub_index){
-    if(index == FirstSearch)
+    if(index == FirstSearch)    // this is weird but is necessary somehow
         index = 1;
     if(sub_index == EndOfNode){
         ++index;
         sub_index = FirstSearch;
     }
-    for(; index < this->Is->size(); index++){
+    // iterate Is list
+    for(; index < this->Is->size(); index++){ 
         if((*this->Is)[index] > 0){
+            // for each s in Is list, search parttern (s, x, x)
             evaluate_SYZ({index, X, X}, result, sub_index);
             if(sub_index != EndSearch)
                 return;
@@ -356,135 +332,46 @@ inline void RDF_index::evaluate_XYZ(struct Triple t, struct Triple& result, int&
         index = EndOfNode;     
 }
 
+// The start of the EVALUATE fucntion
 void RDF_index::evaluate(struct Triple t, struct Triple& result, int& index, int& sub_index){
-    if(t.s >= 0 && t.p >= 0 & t.o >= 0){ // SPO
-        evaluate_SPO(t, result, index);
-        return;
-    }
 
-    if(t.s < 0 && t.p >= 0 && t.o < 0){ // ?XP?Z
-        evaluate_XPZ(t, result, index);
+    // To match different patterns and send to different evolution functions
+    // P.S. I used to have a better-readable-form like the lines after XYZ, but I found this is faster...
+    // And that's true, in XYZ, I need exhaustedly match all patterns, but changing to a tree like 
+    // structure, it is reduced to 3 comparison as in the first part.
+    if(t.s >= 0){
+        t.p >= 0 ? (t.o >= 0 ? evaluate_SPO(t, result, index) : evaluate_SPZ(t, result, index)) : (t.o >= 0 ? evaluate_SYO(t, result, index) : evaluate_SYZ(t, result, index));
         return;
     }
-
-    if(t.s < 0 && t.p >= 0 && t.o >= 0){ // ?XPO
-        evaluate_XPO(t, result, index);
-        return;
-    }
-
-    if(t.s < 0 && t.p < 0 && t.o >= 0){ // ?X?YO
-        evaluate_XYO(t, result, index);
-        return;
-    }
-
-    if(t.s >= 0 && t.p < 0 && t.o < 0){ // S?Y?Z
-        evaluate_SYZ(t, result, index);
-        return;
-    }
-
-    if(t.s >= 0 && t.p < 0 && t.o >= 0){ // S?YO
-        evaluate_SYO(t, result, index);
-        return;
-    }
-
-    if(t.s >= 0 && t.p >= 0 && t.o < 0){ // SP?Z
-        evaluate_SPZ(t, result, index);
-        return;
-    }
-    
-    if(t.s < 0 && t.p < 0 && t.o < 0){ // ?X?Y?Z
-        if(t.s != t.p && t.s != t.o && t.p != t.o){
-            evaluate_XYZ(t, result, index, sub_index);    
+    else{
+        if(t.p >= 0){
+            t.o >= 0 ?  evaluate_XPO(t, result, index) : evaluate_XPZ(t, result, index);
+            return;
         }
-        else if(t.s == t.p && t.s != t.o && t.p != t.o){
-            evaluate_XXO(t, result, index, sub_index);
+        else{
+            if(t.o >= 0){
+                evaluate_XYO(t, result, index); // ?X?YO
+                return;                
+            }
+            else{ // XYZ
+                if(t.s != t.p && t.s != t.o && t.p != t.o){
+                    evaluate_XYZ(t, result, index, sub_index);    
+                }
+                else if(t.s == t.p && t.s != t.o && t.p != t.o){
+                    evaluate_XXO(t, result, index, sub_index);
+                }
+                else if(t.p == t.o && t.s != t.p && t.s != t.o){
+                    evaluate_SXX(t, result, index, sub_index);
+                }
+                else if(t.s == t.o && t.s != t.p && t.o != t.p){
+                    evaluate_XPX(t, result, index, sub_index);
+                }
+                else if(t.s == t.p && t.p == t.o && t.o == t.s){
+                    evaluate_XXX(t, result, index, sub_index);
+                }
+                return;
+            }
         }
-        else if(t.p == t.o && t.s != t.p && t.s != t.o){
-            evaluate_SXX(t, result, index, sub_index);
-        }
-        else if(t.s == t.o && t.s != t.p && t.o != t.p){
-            evaluate_XPX(t, result, index, sub_index);
-        }
-        else if(t.s == t.p && t.p == t.o && t.o == t.s){
-            evaluate_XXX(t, result, index, sub_index);
-        }
-        return;
     }
 
 }
-
-void RDF_index::print_I(std::vector<int>* vec){
-    for(int i = 0; i < vec->size(); i++){
-        if((*vec)[i] != 0)
-            std::cout << i << ": " << (*vec)[i]-1<< " ";
-        else
-            std::cout << " " << " ";
-    }
-    std::cout << std::endl;
-}
-
-/*
-int main(){
-    struct Triple t0 = {1, 2, 2};
-    struct Triple t1 = {1, 3, 2};
-    struct Triple t2 = {1, 3, 3};
-    struct Triple t3 = {1, 3, 4};
-    struct Triple t4 = {1, 4, 2};
-    struct Triple t5 = {2, 1, 3};
-    struct Triple t6 = {1, 1, 1};
-    struct Triple t7 = {3, 4, 5};
-    struct Triple t8 = {4, 2, 2};
-    struct Triple t9 = {5, 2, 2};
-    struct Triple t10 = {3, 3, 2};
-    struct Triple t11 = {4, 4, 2};
-    struct Triple t12 = {1, 6, 6};
-    struct Triple t13 = {2, 1, 1};
-    struct Triple t14 = {1, 5, 2};
-    struct Triple t15 = {1, 7, 2};
-    struct Triple t16 = {2, 3, 3};
-    struct Triple t17 = {3, 3, 3};
-    struct Triple t18 = {3, 4, 3};
-    struct Triple t19 = {3, 1, 3};
-    struct Triple t20 = {3, 6, 3};
-    RDF_index* table = new RDF_index();
-
-    table->add(t0);
-    table->add(t1);
-    table->add(t2);
-    table->add(t3);
-    table->add(t4);
-    table->add(t5);
-    table->add(t6);
-    table->add(t7);
-    table->add(t8);
-    table->add(t9);
-    table->add(t10);
-    table->add(t11);
-    table->add(t12);
-    table->add(t13);
-    table->add(t14);
-    table->add(t15);
-    table->add(t16);
-    table->add(t17);
-    table->add(t18);
-    table->add(t19);
-    table->add(t20);
-    
-
-    table->print_table();
-    //table->print_I(table->Ip);
-    //table->print_map();
-    //table->print_I(table->Is);
-    struct Triple t;
-    int index = FirstSearch; int sub_index = FirstSearch;
-    struct Triple q = {1, 2, Y};
-    std::cout << "start search " << std::endl;
-    while((index != EndOfNode && index != EndSearch)){
-        table->evaluate(q, t, index, sub_index);
-        if(index >= EndOfNode)
-            std::cout << index << ": " << t.s << t.p << t.o << std::endl;
-    }
-    
-    return 0;
-}
-*/

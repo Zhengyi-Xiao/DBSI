@@ -3,12 +3,12 @@
 
 #include <iostream>
 #include <fstream>
-#include <unordered_map>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 
+#include <unordered_map>
 #include <vector>
 
 #include "RDF_index.h"
@@ -17,6 +17,8 @@
 #define SUCCES  1
 
 class Turtle_handler{
+private:
+    int counter = 0;                // counter keeping the index for the main table
 
 public:
     Turtle_handler();
@@ -25,7 +27,6 @@ public:
     std::vector<std::string>* idx2IRI;
     std::unordered_map<std::string, int>* IRI2idx;
 
-    int counter;                // counter keeping the index for the main table
     RDF_index* table;               // the table containing the index table
 };
 
