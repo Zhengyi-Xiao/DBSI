@@ -2,86 +2,87 @@
 #include <stdlib.h>
 #include <string.h>
 #include <iostream>
+#include <chrono>
 
 #include "include/RDF_index.h"
-#include "include/HashTable.h"
 
 
 RDF_index::RDF_index(){
     this->table = new std::vector<int*>;
-    this->Is.resize(1024);
-    this->Ip.resize(1024);
-    this->Io.resize(1024);
-    this->Isp  = new HashTable(2);
-    this->Iop  = new HashTable(2);
-    this->Ispo = new HashTable(3);
+    this->table->resize(16384);
+    this->Is = new std::vector<int>;
+    this->Is->resize(16384);
+    this->Ip = new std::vector<int>;
+    this->Ip->resize(16384);
+    this->Io = new std::vector<int>;
+    this->Io->resize(16384);            
+
+    this->Isp  = new map_t();
+    this->Iop  = new map_t();
+    this->Ispo = new map_t();
     this->size_Io = 0;
     this->size_Is = 0;
+    this->num_element = 0;
 }
 
 int RDF_index::size_of_table(){
-    return this->table->size();
+    return this->num_element;
 }
 
 void RDF_index::resize(){
-    this->Is.resize(this->table->size() << 2);
-    this->Ip.resize(this->table->size() << 2);
-    this->Io.resize(this->table->size() << 2);
+    int current_size = this->table->size();
+    this->table->resize(current_size << 1);
+    this->Is->resize(current_size << 1);    
+    this->Ip->resize(current_size << 1);
+    this->Io->resize(current_size << 1);
 }
 
 inline void RDF_index::update_Isp(struct Triple t){
-    if(this->Is[t.s] == 0){
-        this->Is[t.s] = this->table->size();
-        this->Isp->insert(t.s, t.p, Negect, this->table->size());
+    t.o = 0;
+    if((*this->Is)[t.s] == 0){
+        (*this->Is)[t.s] = this->num_element;
+        (*this->Isp)[t] = this->num_element;
         ++this->size_Is;
     }
-    else if(this->Isp->search(t.s, t.p, Negect) != EndOfNode){
-        if(this->table->at(this->Isp->search(t.s, t.p, Negect) - 1)[Nsp] == EndOfNode)
-            this->table->at(this->Isp->search(t.s, t.p, Negect) - 1)[Nsp] = this->table->size() - 1;
-        else{
-            this->table->back()[Nsp] = this->table->at(this->Isp->search(t.s, t.p, Negect) - 1)[Nsp];
-            this->table->at(this->Isp->search(t.s, t.p, Negect) - 1)[Nsp] = this->table->size() - 1;
-        }
+    else if(this->Isp->find(t) != this->Isp->end()){
+        if((*this->table)[(*this->Isp)[t] - 1][Nsp] != EndOfNode)
+            (*this->table)[this->num_element - 1][Nsp] = (*this->table)[(*this->Isp)[t] - 1][Nsp];
+        (*this->table)[(*this->Isp)[t] - 1][Nsp] = this->num_element - 1;
     }
     else{
-        this->Isp->insert(t.s, t.p, Negect, this->table->size());
-        this->table->back()[Nsp] = this->Is[t.s] - 1;
-        this->Is[t.s] = this->table->size();
+        (*this->Isp)[t] = this->num_element;
+        (*this->table)[this->num_element - 1][Nsp] = (*this->Is)[t.s] - 1;
+        (*this->Is)[t.s] = this->num_element;
     }
 }
 
 inline void RDF_index::update_Iop(struct Triple t){
-    if(this->Io[t.o] == 0){
-        this->Io[t.o] = this->table->size();
-        this->Iop->insert(t.o, t.p, Negect, this->table->size());
+    t.s = 0;
+    if((*this->Io)[t.o] == 0){
+        (*this->Io)[t.o] = this->num_element;
+        (*this->Iop)[t] = this->num_element;
         ++this->size_Io;
     }
-    else if(this->Iop->search(t.o, t.p, Negect) != -1){
-        if(this->table->at(this->Iop->search(t.o, t.p, -1) - 1)[Nop] == -1)
-            this->table->at(this->Iop->search(t.o, t.p, -1) - 1)[Nop] = this->table->size() - 1;
-        else{
-            this->table->back()[Nop] = this->table->at(this->Iop->search(t.o, t.p, -1) - 1)[Nop];
-            this->table->at(this->Iop->search(t.o, t.p, -1) - 1)[Nop] = this->table->size() - 1;
-        }
+    else if(this->Iop->find(t) != this->Iop->end()){
+        if((*this->table)[(*this->Iop)[t] - 1][Nop] != EndOfNode)
+            (*this->table)[this->num_element - 1][Nop] = (*this->table)[(*this->Iop)[t] - 1][Nop];
+        (*this->table)[(*this->Iop)[t] - 1][Nop] = this->num_element - 1;
     }
     else{
-        this->Iop->insert(t.o, t.p, -1, this->table->size());
-        this->table->back()[Nop] = this->Io[t.o] - 1;
-        this->Io[t.o] = this->table->size();
+        (*this->Iop)[t] = this->num_element;
+        (*this->table)[this->num_element - 1][Nop] = (*this->Io)[t.o] - 1;
+        (*this->Io)[t.o] = this->num_element;
     }
 }
 
 inline void RDF_index::update_Ip(struct Triple t){
-    if(this->Ip[t.p] == 0){
-        this->Ip[t.p] = this->table->size();
+    if((*this->Ip)[t.p] == 0){
+        (*this->Ip)[t.p] = this->num_element;
     }
     else{
-        if(this->table->at(this->Ip[t.p] - 1)[Np] == -1)
-            this->table->at(this->Ip[t.p] - 1)[Np] = this->table->size() - 1;
-        else{
-            this->table->back()[Np] = this->table->at(this->Ip[t.p] - 1)[Np];
-            this->table->at(this->Ip[t.p] - 1)[Np] = this->table->size() - 1;
-        }
+        if((*this->table)[(*this->Ip)[t.p] - 1][Np] != EndOfNode)
+            (*this->table)[this->num_element - 1][Np] = (*this->table)[(*this->Ip)[t.p] - 1][Np];
+        (*this->table)[(*this->Ip)[t.p] - 1][Np] = this->num_element - 1;
     }
 }
 
@@ -90,62 +91,109 @@ void RDF_index::add(struct Triple t){
     T_new[0] = t.s; T_new[1] = t.p; T_new[2] = t.o;
     T_new[3] = -1;  T_new[4] = -1;  T_new[5] = -1;
     
-    if(this->Ispo->search(t.s, t.p, t.o) != -1)
+    if(this->Ispo->find(t) != this->Ispo->end())
         return;
 
-    this->table->push_back(T_new);
+    if(this->table->size() < (this->num_element + 2))
+        resize();
 
-    if(this->table->size() < this->Is.size())
-        this->resize();
+    (*this->table)[this->num_element] = T_new;
+
+    ++this->num_element;
+
     update_Isp(t);
     update_Iop(t);
     update_Ip(t);
-    this->Ispo->insert(t.s, t.p, t.o, this->table->size());
+
+    this->Ispo->emplace(t, this->num_element);
+
 }
 
-void RDF_index::print_table(){
-    for (int i = 0; i < this->table->size(); i++){
-        std::cout << i << ": " << this->table->at(i)[0] << " " << this->table->at(i)[1] << " " << this->table->at(i)[2] << " ";
-        for(int j = 3; j < 6; j ++){
-            if(this->table->at(i)[j] != -1)
-                std::cout << this->table->at(i)[j] << " ";
-            else
-                std::cout << "  ";
-        }
-        std::cout << std::endl;
+void RDF_index::print_map(){
+    for(auto kv : *this->Isp){
+        std::cout << kv.first.s << " " << kv.first.p << " " << kv.first.o << ": " << kv.second << std::endl;
     }
 }
+#include <fstream>
+
+void RDF_index::print_table(){
+
+  if(true){
+    std::ofstream MyFile("filename.txt");
+        for(auto kv : *this->Ispo){
+            MyFile << kv.first.s << " " << kv.first.p << " " << kv.first.o << " " << kv.second << '\n';
+
+        }
+  MyFile.close();
+
+    }
+
+    if(false){
+        std::ofstream MyFile("filename2.txt");
+
+            for (int i = 0; i < this->Is->size(); i++){
+                MyFile << i << ": " << this->Is->at(i)  << " ";
+
+            MyFile << "\n";
+            }
+  MyFile.close();
+
+    }
+
+}
+
 
 inline void RDF_index::evaluate_SYZ(struct Triple t, struct Triple& result, int& index){
     do{
         if(index == FirstSearch){
-            COPY(result, index, this->table->at(this->Is[t.s] - 1), Nsp);
+            if((*this->Is)[t.s] == 0){
+                index = EndSearch;
+                return;
+            }
+            COPY(result, index, (*this->table)[(*this->Is)[t.s] - 1], Nsp);
         }
         else{
-            COPY(result, index, this->table->at(index), Nsp);
+            COPY(result, index, (*this->table)[index], Nsp);
         }
-    } while (t.p == t.o && result.p != result.o && index > -1);
+    } while (t.p == t.o && result.p != result.o && index > EndOfNode);
     if(t.p == t.o && result.p != result.o)
         index = EndSearch;
 }
 
 inline void RDF_index::evaluate_SPZ(struct Triple t, struct Triple& result, int& index){
-    if(this->Isp->search(t.s, t.p, Negect) <= -1){
+    t.o = 0;
+    if((*this->Isp)[t] == 0){
         index = EndSearch;
         return;
     }
     if(index == FirstSearch){
-        COPY(result, index, this->table->at(this->Isp->search(t.s, t.p, Negect) - 1), Nsp);
+        COPY(result, index, (*this->table)[(*this->Isp)[t] - 1], Nsp);
     }
     else{
-        COPY(result, index, this->table->at(index), Nsp)
+        COPY(result, index, (*this->table)[index], Nsp);
     }
     if(result.s != t.s || result.p != t.p)
         index = EndSearch;
 }
 
+inline void RDF_index::evaluate_XPO(struct Triple t, struct Triple& result, int& index){
+    t.s = 0;
+    if((*this->Iop)[t] == 0){
+        index = EndSearch;
+        return;
+    }
+    if(index == FirstSearch){
+        COPY(result, index, (*this->table)[(*this->Iop)[t] - 1], Nop);
+    }
+    else{
+        COPY(result, index, (*this->table)[index], Nop);
+    }
+    if(result.o != t.o || result.p != t.p)
+        index = EndSearch;
+}
+
 inline void RDF_index::evaluate_SPO(struct Triple t, struct Triple& result, int& index){
-    if(this->Ispo->search(t.s, t.p, t.o) != -1){
+    if((*this->Ispo)[t] != 0){
         COPY_TRIPLE(result, t);
         index = EndOfNode;
     }
@@ -154,26 +202,20 @@ inline void RDF_index::evaluate_SPO(struct Triple t, struct Triple& result, int&
     }
 }
 
-inline void RDF_index::evaluate_XPO(struct Triple t, struct Triple& result, int& index){
-    if(index == FirstSearch){
-        COPY(result, index, this->table->at(this->Iop->search(t.o, t.p, Negect) - 1), Nop);
-    }
-    else{
-        COPY(result, index, this->table->at(index), Nop)
-    }
-    if(result.o != t.o || result.p != t.p)
-        index = EndSearch;
-}
-
 inline void RDF_index::evaluate_XYO(struct Triple t, struct Triple& result, int& index){
     do{
         if(index == FirstSearch){
-            COPY(result, index, this->table->at(this->Io[t.o] - 1), Nop);
+            if((*this->Io)[t.o] == 0){
+                index = EndSearch;
+                return;
+            }
+            COPY(result, index, (*this->table)[(*this->Io)[t.o] - 1], Nop);
         }
         else{
-            COPY(result, index, this->table->at(index), Nop);
+            COPY(result, index, (*this->table)[index], Nop);
         }
-    } while (t.p == t.s && result.p != result.s && index > -1);
+    } while (t.p == t.s && result.p != result.s && index > EndOfNode);
+
     if(t.p == t.s && result.p != result.s)
         index = EndSearch;
 }
@@ -182,24 +224,32 @@ inline void RDF_index::evaluate_SYO(struct Triple t, struct Triple& result, int&
    if(this->size_Is < this->size_Io){
         do{
             if(index == FirstSearch){
-                COPY(result, index, this->table->at(this->Is[t.s] - 1), Nsp);
+                if((*this->Is)[t.s] == 0){
+                    index = EndSearch;
+                    return;
+                }
+                COPY(result, index, (*this->table)[(*this->Is)[t.s] - 1], Nsp);
             }
             else{
-                COPY(result, index, this->table->at(index), Nsp);
-            }                
-        } while(t.o != result.o && index > -1);
+                COPY(result, index, (*this->table)[index], Nsp);       
+            }
+        } while(t.o != result.o && index > EndOfNode);
         if(t.o != result.o)
             index = EndSearch;
     }
     else{
         do{
             if(index == FirstSearch){
-                COPY(result, index, this->table->at(this->Io[t.o] - 1), Nop);
+                if((*this->Io)[t.o] == 0){
+                    index = EndSearch;
+                    return;
+                }
+                COPY(result, index, (*this->table)[(*this->Io)[t.o] - 1], Nop);
             }
             else{
-                COPY(result, index, this->table->at(index), Nop);
-            }                
-        } while(t.s != result.s && index > -1);
+                COPY(result, index, (*this->table)[index], Nop);
+            }
+        } while(t.s != result.s && index > EndOfNode);
         if(t.s != result.s)
             index = EndSearch;
     }
@@ -208,12 +258,16 @@ inline void RDF_index::evaluate_SYO(struct Triple t, struct Triple& result, int&
 inline void RDF_index::evaluate_XPZ(struct Triple t, struct Triple& result, int& index){
     do{
         if(index == FirstSearch){
-            COPY(result, index, this->table->at(this->Ip[t.p] - 1), Np);
+            if((*this->Ip)[t.p] == 0){
+                index = EndSearch;
+                return;
+            }
+            COPY(result, index, (*this->table)[(*this->Ip)[t.p] - 1], Np);
         }
         else{
-            COPY(result, index, this->table->at(index), Np);
+            COPY(result, index, (*this->table)[index], Np);
         }
-    } while (t.s == t.o && result.s != result.o && index > -1);
+    } while (t.s == t.o && result.s != result.o && index > EndOfNode);
     if(t.s == t.o && result.s != result.o)
         index = EndSearch;       
 }
@@ -225,9 +279,8 @@ inline void RDF_index::evaluate_SXX(struct Triple t, struct Triple& result, int&
         ++index;
         sub_index = FirstSearch;
     }
-
-    for(; index < this->Is.size(); index++){
-        if(this->Is[index] > 0){
+    for(; index < this->Is->size(); index++){
+        if((*this->Is)[index] > 0){
             evaluate_SYZ({index, X, X}, result, sub_index);
             if(sub_index != EndSearch)
                 return;
@@ -244,9 +297,8 @@ inline void RDF_index::evaluate_XXO(struct Triple t, struct Triple& result, int&
         ++index;
         sub_index = FirstSearch;
     }
-
-    for(; index < this->Io.size(); index++){
-        if(this->Io[index] > 0){
+    for(; index < this->Io->size(); index++){
+        if((*this->Io)[index] > 0){
             evaluate_XYO({X, X, index}, result, sub_index);
             if(sub_index != EndSearch)
                 return;
@@ -264,8 +316,8 @@ inline void RDF_index::evaluate_XPX(struct Triple t, struct Triple& result, int&
         sub_index = FirstSearch;
     }
 
-    for(; index < this->Ip.size(); index++){
-        if(this->Ip[index] > 0){
+    for(; index < this->Ip->size(); index++){
+        if((*this->Ip)[index] > 0){
             evaluate_XPZ({X, index, X}, result, sub_index);
             if(sub_index != EndSearch)
                 return;
@@ -279,8 +331,8 @@ inline void RDF_index::evaluate_XXX(struct Triple t, struct Triple& result, int&
     if(index == FirstSearch)
         index = 1;
 
-    for(; index < this->Is.size(); index++){
-        if(this->Is[index] > 0){
+    for(; index < this->Is->size(); index++){
+        if((*this->Is)[index] > 0){
             evaluate_SPO({index, index, index}, result, sub_index);
             if(sub_index == EndOfNode){
                 ++index;
@@ -293,43 +345,20 @@ inline void RDF_index::evaluate_XXX(struct Triple t, struct Triple& result, int&
 
 inline void RDF_index::evaluate_XYZ(struct Triple t, struct Triple& result, int& index, int& sub_index){
     if(index == FirstSearch){
-        COPY_TABLE(result, this->table->at(0));
+        COPY_TABLE(result, (*this->table)[0]);
         index = 1;
     }
     else{
-        COPY_TABLE(result, this->table->at(index));
+        COPY_TABLE(result, (*this->table)[index]);
         ++index;
     }   
-    if(index >= this->table->size())
+    if(index >= this->num_element)
         index = EndOfNode;     
 }
 
 void RDF_index::evaluate(struct Triple t, struct Triple& result, int& index, int& sub_index){
-    if((t.s >= 0 && this->Is.at(t.s) == 0) || 
-       (t.p >= 0 && this->Ip.at(t.p) == 0) || 
-       (t.o >= 0 && this->Io.at(t.o) == 0) ||
-       (t.s >= 0 && t.p >= 0 && this->Isp->search(t.s, t.p, Negect) == -1) ||
-       (t.o >= 0 && t.p >= 0 && this->Iop->search(t.o, t.p, Negect) == -1)){
-        index = EndSearch;
-        return;
-    }
-
-    if(t.s < 0 && t.p < 0 && t.o < 0){ // ?X?Y?Z
-        if(t.s != t.p && t.s != t.o && t.p != t.o){
-            evaluate_XYZ(t, result, index, sub_index);    
-        }
-        else if(t.s == t.p && t.s != t.o && t.p != t.o){
-            evaluate_XXO(t, result, index, sub_index);
-        }
-        else if(t.p == t.o && t.s != t.p && t.s != t.o){
-            evaluate_SXX(t, result, index, sub_index);
-        }
-        else if(t.s == t.o && t.s != t.p && t.o != t.p){
-            evaluate_XPX(t, result, index, sub_index);
-        }
-        else if(t.s == t.p && t.p == t.o && t.o == t.s){
-            evaluate_XXX(t, result, index, sub_index);
-        }
+    if(t.s >= 0 && t.p >= 0 & t.o >= 0){ // SPO
+        evaluate_SPO(t, result, index);
         return;
     }
 
@@ -362,23 +391,38 @@ void RDF_index::evaluate(struct Triple t, struct Triple& result, int& index, int
         evaluate_SPZ(t, result, index);
         return;
     }
-
-    if(t.s >= 0 && t.p >= 0 & t.o >= 0){ // SPO
-        evaluate_SPO(t, result, index);
+    
+    if(t.s < 0 && t.p < 0 && t.o < 0){ // ?X?Y?Z
+        if(t.s != t.p && t.s != t.o && t.p != t.o){
+            evaluate_XYZ(t, result, index, sub_index);    
+        }
+        else if(t.s == t.p && t.s != t.o && t.p != t.o){
+            evaluate_XXO(t, result, index, sub_index);
+        }
+        else if(t.p == t.o && t.s != t.p && t.s != t.o){
+            evaluate_SXX(t, result, index, sub_index);
+        }
+        else if(t.s == t.o && t.s != t.p && t.o != t.p){
+            evaluate_XPX(t, result, index, sub_index);
+        }
+        else if(t.s == t.p && t.p == t.o && t.o == t.s){
+            evaluate_XXX(t, result, index, sub_index);
+        }
         return;
     }
 
 }
 
-void RDF_index::print_I(std::vector<int>& vec){
-    for(int i = 0; i < vec.size(); i++){
-        if(vec[i] != 0)
-            std::cout << i << ": " << vec[i]-1<< " ";
+void RDF_index::print_I(std::vector<int>* vec){
+    for(int i = 0; i < vec->size(); i++){
+        if((*vec)[i] != 0)
+            std::cout << i << ": " << (*vec)[i]-1<< " ";
         else
             std::cout << " " << " ";
     }
     std::cout << std::endl;
 }
+
 /*
 int main(){
     struct Triple t0 = {1, 2, 2};
@@ -402,29 +446,38 @@ int main(){
     struct Triple t18 = {3, 4, 3};
     struct Triple t19 = {3, 1, 3};
     struct Triple t20 = {3, 6, 3};
-    Table* table = new Table();
-    table->add({3,1,3});    
-    table->add(t2);
-    table->add(t3);
-    table->add({2,2,2});
-    table->add(t4);
-    table->add({1,1,2});
-    table->add({3,3,2});  
-    table->add({3,3,3});
-    table->add({4,4,2});
+    RDF_index* table = new RDF_index();
+
     table->add(t0);
     table->add(t1);
+    table->add(t2);
+    table->add(t3);
+    table->add(t4);
     table->add(t5);
     table->add(t6);
     table->add(t7);
-    table->add({4,4,4});
     table->add(t8);
     table->add(t9);
-    table->add({2,1,2});
+    table->add(t10);
+    table->add(t11);
+    table->add(t12);
+    table->add(t13);
+    table->add(t14);
+    table->add(t15);
+    table->add(t16);
+    table->add(t17);
+    table->add(t18);
+    table->add(t19);
+    table->add(t20);
+    
+
     table->print_table();
+    //table->print_I(table->Ip);
+    //table->print_map();
+    //table->print_I(table->Is);
     struct Triple t;
     int index = FirstSearch; int sub_index = FirstSearch;
-    struct Triple q = {2, 1, 2};
+    struct Triple q = {1, 2, Y};
     std::cout << "start search " << std::endl;
     while((index != EndOfNode && index != EndSearch)){
         table->evaluate(q, t, index, sub_index);

@@ -107,15 +107,14 @@ int Turtle_handler::load(std::string file_name){
     return SUCCES;
 }
 
-/*
-#include <chrono>
 
+#include <chrono>
+/*
 int main(){
     Turtle_handler* load_file = new Turtle_handler();
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-
     load_file->load("LUBM-001-mat.ttl");
-    //load_file->table->print_table();
+    load_file->table->print_table();
     //load_file->table->print_I(load_file->table->Is);
     //load_file->table->Isp->print_I();
 
@@ -123,5 +122,4 @@ int main(){
     std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << " ms." << std::endl;
 
     return 0;
-}
-*/
+}*/

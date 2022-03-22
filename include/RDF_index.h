@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "xxh3.h"
-#include "HashTable.h"
 
 #define loading_factor 0.6
 #define COPY(result, index, tmp, i) {result.s = tmp[0]; result.p = tmp[1]; result.o = tmp[2];index = tmp[i];}
@@ -36,6 +35,24 @@ struct Triple {
      }
 };
 
+struct key_hash : public std::unary_function<Triple, std::size_t>{
+    std::size_t operator()(const Triple& t) const{
+        char concatenated[12];
+        std::memcpy(concatenated, (char*)&t.s, sizeof(int));
+        std::memcpy(concatenated+4, (char*)&t.p, sizeof(int));
+        std::memcpy(concatenated+8, (char*)&t.o, sizeof(int));
+        return XXH32(concatenated, 12, 0);
+    }
+};
+ 
+struct key_equal : public std::binary_function<Triple, Triple, bool>{
+    bool operator()(const Triple& t1, const Triple& t2) const{
+        return (t1.s == t2.s && t1.p == t2.p && t1.o == t2.o);
+    }
+};
+ 
+
+typedef std::unordered_map<const Triple, int, key_hash, key_equal> map_t;
 
 class RDF_index{
 
@@ -47,9 +64,8 @@ public:
     int num_element;
     int size_Is, size_Io;
     std::vector<int*>* table;
-    std::vector<int> Is, Ip, Io;
-    HashTable* Isp,* Iop, *Ispo;
-
+    std::vector<int> *Is, *Ip, *Io;
+    map_t *Isp, *Iop, *Ispo;
     RDF_index();
 
     int size_of_table();
@@ -77,7 +93,9 @@ public:
     void evaluate_XXX(struct Triple t, struct Triple& result, int& index, int& sub_index);
 
     void print_table();
-    void print_I(std::vector<int>& vec);
+    void print_I(std::vector<int>* vec);
+    void print_map();
+
 };
 
 #endif

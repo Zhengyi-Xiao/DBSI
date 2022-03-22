@@ -89,6 +89,9 @@ int main() {
     std::vector<std::string> token_input;
     std::cout << "> ";
     std::string input;
+    //interface->LOAD(split("LOAD LUBM-001-mat.ttl"));
+    //interface->COUNT("COUNT ?X ?Y ?Z WHERE {    ?X  <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>                         <http://swat.cse.lehigh.edu/onto/univ-bench.owl#GraduateStudent>  . ?Y  <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>                         <http://swat.cse.lehigh.edu/onto/univ-bench.owl#University>       . ?Z  <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>                         <http://swat.cse.lehigh.edu/onto/univ-bench.owl#Department>       . ?X  <http://swat.cse.lehigh.edu/onto/univ-bench.owl#memberOf>                 ?Z                                                                .    ?Z  <http://swat.cse.lehigh.edu/onto/univ-bench.owl#subOrganizationOf>        ?Y                                                                . ?X  <http://swat.cse.lehigh.edu/onto/univ-bench.owl#undergraduateDegreeFrom>  ?Y                                                                .}");
+
 
     while(std::getline(std::cin, input)){ // quit the program with ctrl-d    
         if(input == ""){

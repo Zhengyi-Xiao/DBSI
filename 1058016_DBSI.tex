@@ -55,7 +55,32 @@ Your degree: MSc Advanced Computer Science
 \newpage
 
 \begin{enumerate}
-	\item I intend to use linear hashing table. Firstly, I use XXHash to get the hash index of an IRI and then insert the IRI into a linear hashing table. 
+	\item 
+	\begin{enumerate}
+	\item 
+	The data structure in this paper is a six-column triple table. The subject, predicate, and object of a triple are encoded as integers in the first three columns, $R_s$, $R_p$, and $R_o$, respectively. Conceptually, there are three linked lists, an $sp$-list that connects all triples with the same $R_s$ grouped by $R_p$, an $op$-list that associates all triple with the same $R_o$ grouped by $R_p$, and a $p$-list that relates all triples with the same $R_p$ without any grouping. In the table, the last three columns, $N_{sp}$, $N_{op}$, and $N_p$, store the next-pointes, which are going to be the row number in the triple table in the actual implementation.
+	
+	Six index maps are also maintained. $I_s$, $I_p$, and $I_o$ store the head of the $sp$-list, $p$-list, and $op$-list, respectively. $I_{sp}$ maps $s$ and $p$ to the first occurrence of the triple with the same $s$ and $p$ in the $sp$-list. So does $I_{op}$. $I_{spo}$ stores the row number of each triple in the table. 
+	
+	\item 
+	\end{enumerate}
+	
+	
 \end{enumerate}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 \end{document}
