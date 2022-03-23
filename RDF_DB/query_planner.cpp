@@ -29,7 +29,7 @@ void Query_planner::plan_query(std::vector<struct Triple>& U, std::vector<struct
             }
             else{
                 if((variables.empty() || !v_intersection.empty())){
-                    t_best = t; score_best = score;
+                    t_best = t; score_best = score; intersected = true;
                 }                
             }
         }

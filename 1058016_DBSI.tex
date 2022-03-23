@@ -89,7 +89,7 @@ Your degree: MSc Advanced Computer Science
 \end{algorithmic}
 \end{algorithm}
 
-The columns, $N_{sp}$, $N_{op}$, and $N_p$, are maintained in a linked-list-like manner and are updated simultaneously with the index maps. Take $N_{op}$ for example, if $T_{new}$ does not appear in the $I_o$ and $I_{op}$, it means that  $T_{new}$ is a new triple that the triple table never see before. Therefore, we insert $T_{new}$ into the index map $I_o$ and $I_{op}$ (case1). If we found a $T$ with $T.o = T_{new}.o$ and $T.o = T_{new}.p$, then we insert $T_{new}$ after $T$, and point the next of $T_{new}$ to the original next of the $T$ (case3). A special case is that when there is no next for $T$ and it is handled in case 2 of the Algorithm \eqref{alg:updateIop}. The case of $M_{sp}$ and $N_p$ is similar.
+The columns, $N_{sp}$, $N_{op}$, and $N_p$, are maintained in a linked-list-like manner and are updated simultaneously with the index maps. Take $N_{op}$ for example, if $T_{new}$ does not appear in the $I_o$ and $I_{op}$, it means that  $T_{new}$ is a new triple that the triple table never see before. Therefore, we insert $T_{new}$ into the index map $I_o$ and $I_{op}$ (case1). If we found a $T$ with $T.o = T_{new}.o$ and $T.o = T_{new}.p$, then we insert $T_{new}$ after $T$, and point the next of $T_{new}$ to the original next of the $T$ (case3). A special case is that when there is no next for $T$ and it is handled in case 2 of the Algorithm \eqref{alg:updateIop}. The case of $N_{sp}$ and $N_p$ is similar.
 
 \begin{algorithm}[H]
 \caption{Update $I_{op}$($T_{new}$)}\label{alg:updateIop}
@@ -112,30 +112,79 @@ The columns, $N_{sp}$, $N_{op}$, and $N_p$, are maintained in a linked-list-like
 \end{algorithmic}
 \end{algorithm}
 
-There 
+\item 
 
+ 
+Let $t = \langle s, p, o\rangle$ be a triple pattern and $X$, $Y$, and $Z$ be free variables. There are two inputs for EVALUATE; $t$, the matching pattern, and index, the previous state. There are also two outputs, $t'$, the answer to the math pattern, index, the current state. The index are usually the pointer to the next triple, but there are two sentinel; EndOfNode will tell the caller there is no more next triple to search and EndSearch stands for an illegal search. The general frame work is shown in Algorithm \eqref{alg:evaluate}.
 
+\begin{algorithm}[H]
+\caption{Framework}\label{alg:evaluate}
+\begin{algorithmic}
+
+\While{index $\neq$ EndOfNode AND index $\neq$ EndSearch}
+\State index, $t' \leftarrow$ Evaluate($t$, index)
+\EndWhile
+
+\end{algorithmic}
+\end{algorithm}
+
+Inside EVALUATE, there are four categories we need to discuss, from no free variable to all three are variables. 
+
+When there is not free variable, EVALUATE will check if $t$ is in $I_{spo}$ map, if it is return the triple and set the index be EndOfNode. Otherwise, it will return nothing and set the index be EndSearch. The pseudo-code is shown in Algorithm \eqref{alg:evaluateSPO}. 
+
+\begin{algorithm}[H]
+\caption{Evaluate $\langle s, p, o\rangle$}\label{alg:evaluateSPO}
+\begin{algorithmic}
+\If{$t$ in $I_{spo}$}	
+\State index $\leftarrow$ EndOfNode
+\State \Return t
+\Else
+\State index $\leftarrow$ EndSearch 
+\EndIf
+\end{algorithmic}
+\end{algorithm}
+
+When there is one free variable, there are three cases: $\langle X, p, o\rangle$, $\langle s, X, o\rangle$, and $\langle s, p, X\rangle$. The first and the last cases are similar. For $\langle X, p, o\rangle$, in the first search, we want to use the index map, $I_{op}$ to locate the head of the triple with predicate and object the same as $o$ and $p$, then we return the first match and the next pointer at $N_{op}$. For all subsequent evaluate, we traverse $N_{op}$ list until there is no match. The pseudo-code is suggested in Algorithm \eqref{alg:evaluateXPO}.
+ 
+\begin{algorithm}[H]
+\caption{Evaluate $\langle X, p, o\rangle$}\label{alg:evaluateXPO}
+\begin{algorithmic}
+\If{hash($t.p, t.o$) does not appear in $I_{op}$}
+\State index $\leftarrow$ EndSearch
+\EndIf
+\If{it is the first search} \Comment{locate the head}
+\State $t'\leftarrow$ the triple $I_{op}$ points to, index $\leftarrow$ $t'.N_{op}$.
+\Else\Comment{traverse $N_{op}$ list}
+\State $t'\leftarrow t.N_{op}$, index $\leftarrow t'.N_{op}$
+\EndIf
+\If{$t'.o$ and $t'.p$ are not we are looking for}\Comment{the end of grouped by.}
+\State index $\leftarrow$ EndSearch
+\EndIf
+\end{algorithmic}
+\end{algorithm}
+
+$\langle s, p, X\rangle$ is similar. Since we don't have index on $s$ and $o$,  $\langle s, X, o\rangle$ needs some extra attentions. Assume that the size of the $I_s$ is smaller than that of $I_o$, then for each matching pattern $t$, we iterate over $s$ in $I_s$, 
 
 \end{enumerate}
 \item 
 \begin{enumerate}
 \item RDF indexing data structure that implements Add and Evaluate functions.
 
-This component is included in RDF\_index.cpp, in which ADD and EVALUATE are implemented as suggested in the problem. There are a few things that is slightly different from the paper. 
+This component is included in RDF\_index.cpp, in which ADD and EVALUATE are implemented as suggested in the problem 1. There are a few things that is slightly different from the paper. 
 
 1) I used XXHASH\footnote{https://cyan4973.github.io/xxHash/} by Facebook instead of Jenkings hashing, because it achieves state-of-the-art excellent performance on both long and small inputs. 
 
-2) Instead of open addressing, I eventually choose std::unordered\_map for index maps $I_{sp}$, $I_{op}$ and $I_{spo}$. I had an open addressing hash implemented in HashTable.cpp and HashTable.h (attached in the submission), but it was much slower than the unordered\_map so I changed it after one update. 
+2) Instead of open addressing, I eventually choose std::unordered\_map for index maps $I_{sp}$, $I_{op}$ and $I_{spo}$. I had an open addressing hash implemented in HashTable.cpp and HashTable.h (attached in the submission), but it was much slower than the unordered\_map (by about 20\% or more).
 
-3) To match the patterns like $\langle X, Y, Z\rangle$, the paper suggests to iterate over the triple table; if we want $X = Y$,  we skip those $X\neq Y$. I modify this a little bit to improve the efficiency. Again, $\langle X, X, Z\rangle$, for example, we first iterate $I_s$, and for each $s$ in $I_s$, we find if $I_{sp}$ includes hash($s, s$), if yes, we traverse over the triple table. As shown in the pseudo-code in Algorithm \eqref{alg:evaluateXXP}.
+3) To match the patterns like $\langle X, Y, Z\rangle$, the paper suggests to iterate over the triple table; if we want $X = Y$,  we skip those $X\neq Y$. I modify this a little bit to improve the efficiency. Again, $\langle X, X, Z\rangle$, for example, we first iterate $I_s$, and for each $s$ in $I_s$, we find if $I_{sp}$ includes hash($s, s$), if yes, we traverse over the triple table. As shown in the pseudo-code in Algorithm \eqref{alg:evaluateXXP}\footnote{The actual implementation is slightly different. I put the check of if $i$ in $I_{sp}$ at the begging of the Evaluate\_SPZ to reduce some code redundancy, but they are equivalent.}.
 
 \begin{algorithm}[H]
-\caption{Evaluate $\langle X, Y, Z\rangle$}\label{alg:evaluateXXP}
+\caption{Evaluate $\langle X, X, Z\rangle$}\label{alg:evaluateXXP}
 \begin{algorithmic}
 \For{$s$ in $I_s$}
 \State $i = $ hash($s, s$)
 \If{$i$ in $I_{sp}$}	
-\State Evaluate\_SPZ($s, s$) \Comment{Evaluate\_SPZ }
+\State Evaluate\_SPZ($s, s$)
 \EndIf
 \EndFor
 \end{algorithmic}
@@ -154,19 +203,84 @@ $\langle X, Y, Y\rangle$ and $\langle X, Y, X\rangle$ are similar. For $\langle 
 
 \item The engine for evaluating BGP SPARQL queries.
 
-This part is in the files SPARQL\_engine.cpp. And is implemented strictly based on the model answer. A few additional lines are added for printing or improving performance.
+This part is in the file SPARQL\_engine.cpp and it is implemented strictly based on the model answer. A few additional lines are added for printing or improving performance.
 
 \item The greedy join order optimization query planner.
 
-I see what the model answer is trying to say but I believe there are some minor errors so I change it slightly but it is still $O(n)$, where $n$ is the number of triple patterns we try to fit. 
+This part can be sought in the file query\_planner.cpp. I see what the model answer is trying to say but I believe there are some minor mistakes so I change it slightly but it is still $O(n)$, where $n$ is the number of triple patterns we try to fit. 
 
+There were two things I modified. Firstly, the last three lines should go to the outside while loop. Secondly and most importantly, I changed the criteria for updating the new triple patterns. In the model answer, the criteria is 
+\begin{equation}\label{criteria}
+	t_{best} = \perp \text{ or } score < score_{best} \text{ and either } var(t) = \emptyset \text{ or } var(t) \cap B \neq \emptyset.
+\end{equation}
+It is troublesome because it will always take the first unprocessed triple pattern as the best pattern and compare this with the remaining. However, it might cause some issues in many cases. For example, the following triple patterns 
+\begin{align*}
+	\langle X &,\quad 1,\quad 2\rangle \\
+	\langle Y &,\quad 2,\quad 3\rangle\\
+	\langle X &,\quad 4,\quad Y\rangle
+\end{align*}
+will produce the plan $\langle X, 1, 2\rangle \mapsto \langle Y, 2, 3\rangle \mapsto \langle X, 4, Y\rangle$ because even after we replace the $X$ in $\langle X, 4, Y\rangle$, this triple pattern still has higher selectivity than $\langle Y, 2, 3\rangle$. However, this plan will create an unnecessary cross product and I believe the criteria \eqref{criteria} meant choosing the triple pattern that has the lowest selectivity and includes some variables that are in the  processed patterns. Therefore, the new pseudo-code goes as the follow. 
+
+\begin{algorithm}[H]
+\caption{New-Plan-Query($U$)}\label{alg:greedy}
+\begin{algorithmic}
+
+\State $P \leftarrow []$, $B\leftarrow \emptyset$
+\While{$U\neq \emptyset$}
+\State $t_{best}\leftarrow \perp$, $score_{beset} \leftarrow 100$, intersected $\leftarrow$ false
+\For{\textbf{each} unprocessed tripple pattern $t\in U$}
+\State $score \leftarrow$ the position of $t$ in $\prec$ where the variables in $B$ are considered bounded
+\If{$t_{best} = \perp$}
+\State intersected = ($var(t) \cap B \neq \emptyset$)
+\State $t_{best} \leftarrow t$, $score_{best} \leftarrow score$
+\ElsIf{intersected}
+\If{$score < score_{best}$ and either $var(t) = \emptyset$ or $var(t) \cap B \neq \emptyset$}
+\State $t_{best} \leftarrow t$, $score_{best} \leftarrow score$
+\EndIf
+\Else
+\If{$var(t) = \emptyset$ or $var(t) \cap B \neq \emptyset$} \Comment{Make sure that the next pattern share some variables.}
+\State $t_{best} \leftarrow t$, $score_{best} \leftarrow score$, intersected $\leftarrow$ true
+\EndIf
+\EndIf
+
+\EndFor
+\EndWhile
+
+\end{algorithmic}
+\end{algorithm}
+
+In the new query plan, still, we take the first unprocessed triple pattern as our best plan at the beginning. However, we will mark down if the first pattern shares some common variables with some processed patterns. If it is, we will select the least selectivity pattern that also share some common variables in the remaining as in the model answer. However, if the first triple pattern does not share any processed variable, we pick the first pattern that shares some processed variables and then we search for the least selectivity pattern as before. The new plan in the example will now become $\langle X, 1, 2\rangle \mapsto \langle X, 4, Y\rangle \mapsto \langle Y, 2, 3\rangle$. 
+
+I also did some experiments showing that the strategy works. The testing protocol is the same as the one in the question 3. From the table 1, we see that there is a significant improvement for query 2, 7, 8, and 9. 
+
+\begin{table}[]\centering
+\begin{tabular}{|l|l|l|}
+\hline
+    & Model Answer & New Query Plan \\ \hline
+q1  & 7            & 8              \\ \hline
+q2  & 10107        & 22             \\ \hline
+q3  & 24           & 25             \\ \hline
+q4  & 2            & 2              \\ \hline
+q5  & 37           & 37             \\ \hline
+q6  & 25           & 25             \\ \hline
+q7  & 64267        & 133            \\ \hline
+q8  & 801          & 128            \\ \hline
+q9  & 46215        & 250            \\ \hline
+q10 & 31           & 29             \\ \hline
+q11 & 1            & 1              \\ \hline
+q12 & 0            & 0              \\ \hline
+q13 & 33           & 35             \\ \hline
+q14 & 19           & 18             \\ \hline
+\end{tabular}
+\caption{Time took to process and evaluate the query by the model answer and the new query plan in ms on the data set LUBM-001-mat.ttl.}
+\end{table}
 \item The component for parsing and importing Turtle files.
 
-This part is included in query\_parser.cpp. My parser not only read the query but also check if the triple patterns are correct such as if the query is asking for something that is not presented in the database, it will throw a warning right away instead of feeding it into the query engine to create overhead. 
+This part is included in Turtle\_handler.cpp. The error checking increases the running time by a lot. 
 
 \item The parser for SPARQL queries
 
-This part is included in interface.cpp.
+This part is included in query\_parser.cpp. My parser not only reads the query but also checks if the triple patterns are correct such as if the query is asking for something that is not presented in the database, it will throw a warning right away instead of feeding it into the query engine to create overhead. 
 
 \item The component implementing the command line
 
@@ -215,12 +329,12 @@ Hardware and Software Configuration:
 
 \end{enumerate}
 
-\item[3.b] The time needed to load and index the data and the time needed to produce all query answers for each RDF graph and query are showed in Table 1 and Table 2, respectively.
+\item[3.b] The time needed to load and index the data and the time needed to produce all query answers for each RDF graph and query are showed in table 2 and table 3, respectively.
 
 \begin{table}[H]\centering
 \begin{tabular}{|l|l|l|l|}
 \hline
-                   & LUBM-010-mat & LUBM-010-mat & LUBM-010-mat \\ \hline
+                   & LUBM-001-mat & LUBM-010-mat & LUBM-100-mat \\ \hline
 Load \& Index Time & 1064         & 11879        & 122583       \\ \hline
 \end{tabular}
 \caption{Time needed to load and index the data in ms.}
