@@ -39,39 +39,26 @@ void SPARQL_engine::join_helper(std::unordered_map<int, int> & sigma, int i){
         struct Triple result;
         int index = FirstSearch; int sub_index = FirstSearch;
         while((index != EndOfNode && index != EndSearch)){
-            bool s = true; bool p = true; bool o = true;
             question = this->query->Tps->at(i-1);
-            if(sigma.count(question.s)){
-                question.s = sigma[question.s];
-                s = false;
-            }
-            if(sigma.count(question.p)){
-                question.p = sigma[question.p];
-                p = false;
-            }
-            if(sigma.count(question.o)){
-                question.o = sigma[question.o];
-                o = false;
-            }
-                
+            question.s = (question.s < 0 && sigma[question.s] > 0) ? sigma[question.s] : question.s;
+            question.p = (question.p < 0 && sigma[question.p] > 0) ? sigma[question.p] : question.p;
+            question.o = (question.o < 0 && sigma[question.o] > 0) ? sigma[question.o] : question.o;
+
             this->query->Turtle_handler->table->evaluate(question, result, index, sub_index);
             
             if(index >= EndOfNode){
-                if(s)
-                    sigma[question.s] = result.s;
-                if(p)
-                    sigma[question.p] = result.p;
-                if(o)
-                    sigma[question.o] = result.o;
+                sigma[question.s] = result.s;                
+                sigma[question.p] = result.p;
+                sigma[question.o] = result.o;
 
                 join_helper(sigma, i + 1);
 
-                if(s)
-                    sigma.erase(question.s);
-                if(p)
-                    sigma.erase(question.p);
-                if(o)
-                    sigma.erase(question.o);
+                if(question.s < 0)
+                    sigma[question.s] = 0;
+                if(question.p < 0)
+                    sigma[question.p] = 0;
+                if(question.o < 0)
+                    sigma[question.o] = 0;
             }
         }        
     }

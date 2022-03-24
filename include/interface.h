@@ -29,8 +29,8 @@ public:
     Query_planner* query_planner;
     SPARQL_engine* query_engine;
 
-    std::chrono::steady_clock::time_point begin;
-    std::chrono::steady_clock::time_point end;
+    std::chrono::high_resolution_clock::time_point begin;
+    std::chrono::high_resolution_clock::time_point end;
 
 };
 

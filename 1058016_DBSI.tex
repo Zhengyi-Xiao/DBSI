@@ -34,6 +34,8 @@
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 
+\algdef{SE}[DOWHILE]{Do}{doWhile}{\algorithmicdo}[1]{\algorithmicwhile\ #1}%
+
 
 \newtheorem{definition}{Definition}
 \newtheorem{theorem}{Theorem}
@@ -115,14 +117,14 @@ The columns, $N_{sp}$, $N_{op}$, and $N_p$, are maintained in a linked-list-like
 \item 
 
  
-Let $t = \langle s, p, o\rangle$ be a triple pattern and $X$, $Y$, and $Z$ be free variables. There are two inputs for EVALUATE; $t$, the matching pattern, and index, the previous state. There are also two outputs, $t'$, the answer to the math pattern, index, the current state. The index are usually the pointer to the next triple, but there are two sentinel; EndOfNode will tell the caller there is no more next triple to search and EndSearch stands for an illegal search. The general frame work is shown in Algorithm \eqref{alg:evaluate}.
+Let $t = \langle s, p, o\rangle$ be a triple pattern and $X$, $Y$, and $Z$ be free variables. There are two inputs for EVALUATE; $t$, the matching pattern, and \textit{index}, the previous state. There are also two outputs, $t'$, the answer to the math pattern, \textit{index}, the current state. The index are usually the pointer to the next triple, but there are two sentinel; \textit{EndOfNode} will tell the caller there is no more next triple to search and \textit{EndSearch} stands for an illegal search. The general frame work is shown in Algorithm \eqref{alg:evaluate}.
 
 \begin{algorithm}[H]
 \caption{Framework}\label{alg:evaluate}
 \begin{algorithmic}
 
-\While{index $\neq$ EndOfNode AND index $\neq$ EndSearch}
-\State index, $t' \leftarrow$ Evaluate($t$, index)
+\While{\textit{index} $\neq$ \textit{EndOfNode} and \textit{index} $\neq$ \textit{EndSearch}}
+\State \textit{index}, $t' \leftarrow$ Evaluate($t$, \textit{index})
 \EndWhile
 
 \end{algorithmic}
@@ -130,40 +132,65 @@ Let $t = \langle s, p, o\rangle$ be a triple pattern and $X$, $Y$, and $Z$ be fr
 
 Inside EVALUATE, there are four categories we need to discuss, from no free variable to all three are variables. 
 
-When there is not free variable, EVALUATE will check if $t$ is in $I_{spo}$ map, if it is return the triple and set the index be EndOfNode. Otherwise, it will return nothing and set the index be EndSearch. The pseudo-code is shown in Algorithm \eqref{alg:evaluateSPO}. 
+When there is not free variable, EVALUATE will check if $t$ is in $I_{spo}$ map, if it is return the triple and set the index be \textit{EndOfNode}. Otherwise, it will return nothing and set the index be \textit{EndSearch}. The pseudo-code is shown in Algorithm \eqref{alg:evaluateSPO}. 
 
 \begin{algorithm}[H]
 \caption{Evaluate $\langle s, p, o\rangle$}\label{alg:evaluateSPO}
 \begin{algorithmic}
+\Require $t = \langle s, p, o\rangle$
 \If{$t$ in $I_{spo}$}	
-\State index $\leftarrow$ EndOfNode
+\State \textit{index} $\leftarrow$ \textit{EndOfNode}
 \State \Return t
 \Else
-\State index $\leftarrow$ EndSearch 
+\State \textit{index} $\leftarrow$ \textit{EndSearch} 
 \EndIf
 \end{algorithmic}
 \end{algorithm}
 
-When there is one free variable, there are three cases: $\langle X, p, o\rangle$, $\langle s, X, o\rangle$, and $\langle s, p, X\rangle$. The first and the last cases are similar. For $\langle X, p, o\rangle$, in the first search, we want to use the index map, $I_{op}$ to locate the head of the triple with predicate and object the same as $o$ and $p$, then we return the first match and the next pointer at $N_{op}$. For all subsequent evaluate, we traverse $N_{op}$ list until there is no match. The pseudo-code is suggested in Algorithm \eqref{alg:evaluateXPO}.
+When there is one free variable, there are three cases: $\langle X, p, o\rangle$, $\langle s, X, o\rangle$, and $\langle s, p, X\rangle$. The first and the last cases are similar. For $\langle X, p, o\rangle$, in the first search, we use the index map, $I_{op}$, to locate the head of the triple with predicate and object the same as $o$ and $p$, then we return the first match and the next pointer at $N_{op}$. For all subsequent evaluate, we traverse $N_{op}$ list until there is no match. The pseudo-code is suggested in Algorithm \eqref{alg:evaluateXPO}.
  
 \begin{algorithm}[H]
 \caption{Evaluate $\langle X, p, o\rangle$}\label{alg:evaluateXPO}
 \begin{algorithmic}
+\Require $t = \langle X, p, o\rangle$
 \If{hash($t.p, t.o$) does not appear in $I_{op}$}
-\State index $\leftarrow$ EndSearch
+\State \textit{index} $\leftarrow$ \textit{EndSearch}
 \EndIf
 \If{it is the first search} \Comment{locate the head}
-\State $t'\leftarrow$ the triple $I_{op}$ points to, index $\leftarrow$ $t'.N_{op}$.
+\State $t'\leftarrow$ the triple $I_{op}$ points to, \textit{index} $\leftarrow$ $t'.N_{op}$.
 \Else\Comment{traverse $N_{op}$ list}
-\State $t'\leftarrow t.N_{op}$, index $\leftarrow t'.N_{op}$
+\State $t'\leftarrow t.N_{op}$, \textit{index} $\leftarrow t'.N_{op}$
 \EndIf
 \If{$t'.o$ and $t'.p$ are not we are looking for}\Comment{the end of grouped by.}
-\State index $\leftarrow$ EndSearch
+\State \textit{index} $\leftarrow$ \textit{EndSearch}
 \EndIf
 \end{algorithmic}
 \end{algorithm}
 
-$\langle s, p, X\rangle$ is similar. Since we don't have index on $s$ and $o$,  $\langle s, X, o\rangle$ needs some extra attentions. Assume that the size of the $I_s$ is smaller than that of $I_o$, then for each matching pattern $t$, we iterate over $s$ in $I_s$, 
+$\langle s, p, X\rangle$ is similar. Since we don't have index on $s$ and $o$,  $\langle s, X, o\rangle$ needs some extra works. Assume that the size of the $I_s$ is smaller than that of $I_o$, then for each matching pattern $t$, we iterate over $s$ in $I_s$, 
+
+
+When there are two free variables, there are also three cases: $\langle X, Y, o\rangle$, $\langle X, p, Z\rangle$, and $\langle s, Y, Z\rangle$, where $X$, $Y$, and $Z$ can be equal. Their idea is similar; $\langle X, Y, o\rangle$, for example, we first find $I_o[t.o]$ and traverse the $op$-list till the end. If $X=Y$, then we skip those triples with $p \neq o$. The pseudo-code is given in Algorithm \eqref{alg:evaluateXYO}\footnote{Even I found myself a little confused by what I wrote in the do-while loop, so this footnote might be helpful. After a few minutes of thinking, I found only when we want $X=Y$, the condition $t'.p \neq t'.s$ will make the loop start and try to locate the one with $t.p = t.s$. If $X\neq Y$, the loop will never start and return immediately.}.
+
+\begin{algorithm}[H]
+\caption{Evaluate $\langle X, Y, o\rangle$}\label{alg:evaluateXYO}
+\begin{algorithmic}
+\Require $t = \langle X, Y, o\rangle$, where $X$ and $Y$ are special code stands for variables. 
+\Do
+\If{it is the first search}
+\State $t'\leftarrow$ the triple $I_{o}$ points to, \textit{index} $\leftarrow$ $t'.N_{op}$.
+\Else 
+\State $t'\leftarrow t.N_{op}$, \textit{index} $\leftarrow t'.N_{op}$
+\EndIf
+\doWhile{$X= Y$ and $t'.p \neq t'.s$ and \textit{index} $\neq$ \textit{EndOfNode}}
+\If{$X=Y$ and $t'.p\neq t'.s$}\Comment{stop traversing when $t'.p\neq t'.s$ when the pattern asks $X=Y$}
+\State \textit{index} = \textit{EndSearch}
+\EndIf
+\end{algorithmic}
+\end{algorithm}
+The idea for the other two patterns are similar, but starts from $I_p$ or $I_s$ map and traverse the $p$-list or $sp$-list.
+
+When there are three free variables, the paper suggests to match, for example, the patterns like $\langle X, Y, Z\rangle$, we need to iterate over the triple table; if we want $X = Y$,  we skip those $X\neq Y$. However, this is not efficient. Therefore, I modified a little bit and the idea and pseudo-code are discussed in 2.a, where I put everything that is different from paper there. 
 
 \end{enumerate}
 \item 
@@ -317,15 +344,39 @@ Hardware and Software Configuration:
 
 \end{enumerate}
 
-\item Test Protocol:
+\item 
+
+We set a timeout if one instruction takes more than 3 minutes. 
+
+Loading Data Test Protocol:
 
 \begin{enumerate}
 \item Turn off all irrelevant applications.
 \item Start a clean terminal.
-\item make all and run the output file.
-\item If it is measuring the time needed to load and index thedata, markdown the time and repeat this process for 10 times. Take off the highest and the lowest and find the average. 
-\item To measure the time needed to evaluate the query, we choose COUNT instead of SELECT and for each query, we markdown the time and repeat this process for 10 times. Take off the highest and the lowest and find the average. 
+\item Make all and run the output file.
+\item Load one dataset and markdown the time. If timeout, mark TO. 
+\item Go back to step two repeat this process for 10 times.
+\item Take off the highest and the lowest and find the average. 
 \end{enumerate}
+
+\item 
+
+Loading Data Test Protocol:
+
+We choose COUNT instead of SELECT and for each query. Still, we set a timeout if one instruction takes more than 3 minutes. 
+
+\begin{enumerate}
+\item Turn off all irrelevant applications.
+\item Start a clean terminal.
+\item Make all and run the output file.
+\item Load one dataset. 
+\item Run a query and markdown the time. 
+\item Go back to the last step repeat this process for 10 times. 
+\item Take off the highest and the lowest and find the average. 
+
+
+\end{enumerate}
+
 
 \end{enumerate}
 
@@ -335,7 +386,7 @@ Hardware and Software Configuration:
 \begin{tabular}{|l|l|l|l|}
 \hline
                    & LUBM-001-mat & LUBM-010-mat & LUBM-100-mat \\ \hline
-Load \& Index Time & 1064         & 11879        & 122583       \\ \hline
+Load \& Index Time & 902         & 11879        & 122583       \\ \hline
 \end{tabular}
 \caption{Time needed to load and index the data in ms.}
 \end{table}
@@ -346,28 +397,41 @@ Load \& Index Time & 1064         & 11879        & 122583       \\ \hline
 \begin{tabular}{|l|l|l|l|}
 \hline
     & LUBM-001-mat & LUBM-010-mat & LUBM-100-mat \\ \hline
-q1  & 8            & 95           & 817          \\ \hline
-q2  & 22           & 393          & 25387        \\ \hline
-q3  & 25           & 261          & 2533         \\ \hline
-q4  & 2            & 26           & 211          \\ \hline
-q5  & 37           & 349          & 3489         \\ \hline
-q6  & 25           & 254          & 2376         \\ \hline
-q7  & 133          & 1375         & 14250        \\ \hline
-q8  & 128          & 1060         & 11367        \\ \hline
-q9  & 250          & 2618         & 26922        \\ \hline
-q10 & 29           & 328          & 3305         \\ \hline
-q11 & 1            & 13           & 119          \\ \hline
-q12 & 0            & 2            & 27           \\ \hline
-q13 & 35           & 322          & 3485         \\ \hline
-q14 & 18           & 194          & 1809         \\ \hline
+q1  & 4.081        & 42.336       & 502.755      \\ \hline
+q2  & 22.829       & 237.585      & 2438.57      \\ \hline
+q3  & 12.408       & 131.304      & 1425.94      \\ \hline
+q4  & 1.573        & 10.439       & 132.892      \\ \hline
+q5  & 17.797       & 178.091      & 1935.87      \\ \hline
+q6  & 8.212        & 108.531      & 1044.5       \\ \hline
+q7  & 90.213       & 974.828      & 10386.4      \\ \hline
+q8  & 70.124       & 673.855      & 6589.79      \\ \hline
+q9  & 71.726       & 723.767      & 7494.22      \\ \hline
+q10 & 15.919       & 182.715      & 1907.54      \\ \hline
+q11 & 0.941        & 6.773        & 63.929       \\ \hline
+q12 & 0.259        & 1.833        & 18.833       \\ \hline
+q13 & 16.587       & 200.297      & 2066.33      \\ \hline
+q14 & 7.325        & 94.932       & 814.723      \\ \hline
 \end{tabular}
 \caption{Time needed to produce  all query answers in ms.}
 \end{table}
 
 \item[3.c]
-
 \begin{enumerate}
-\item There
+\item[q1:] This query consists of two triple patterns and they are in the form of $\langle X, p, o\rangle$. Therefore, the algorithm just pick a $X$ in the first pattern and see if the $X$ can be fitted into the second pattern. Therefore, it is quick.
+
+\item[q2:] This query contains two groups, $\langle X, p, o\rangle$ and $\langle X, p, Z\rangle$, and each group has three triples. By my planning, the query is planned in find a $\langle X, p, o\rangle$ and find a $\langle X, p, Z\rangle$ that match the first pick, then pick whatever match the variable, $Z$, in the remaining unprocessed patterns. Therefore, it picks the least selectivity pattern in each step, resulting a very small running time. 
+\item[q3:] This one is similar to q1 but the time is different because they are different in size. In LUBM-001-mat.ttl, q3 has 5999 possible match in the first pattern and 6 in the second. However, q1 has 1874 in the first and 4 in the second. 
+\item[q4:] Though this query looks terrify, the speed is fast because all patterns share the same $X$ in $p$ and beside this, there is at most one free variable in each. Therefore, once $X$ is picked, the remaining is just to check if $Y$ can go with $X$. Also, the size is small, there are 447 possibility in the first pattern and  41 in the second pattern for  LUBM-001-mat.ttl. 
+\item[q5:] This one is similar to q1 and q3 but is much slower, which is because the search space is large. This one has 8330 possibility for the first pattern and  719 for the second. 
+\item[q6:] This query simply match just one pattern. No plan is needed. It is slower than q1 because it returns 7790 patterns more than q1, which is just 4. 
+\item[q7:] There is nothing wrong with the query plan on a high (selectivity) level  that it chooses the first pattern $\langle X, p, o\rangle$, then $\langle X, p , Y\rangle$, and matches the rest. The plan is perfect if we don't check how large is each triple patterns. There are two patterns like $\langle X, p, o\rangle$; the first one has the size 7790 and the second one is 1627. If we start from the second one, we could speed up by a lot. But we did the first one instead because it is the order it comes in and we didn't track the size of each index map to make adjustment.
+\item[q8:] q8 has one more free variable than q7 and has 7790 results for LUBM-001-mat.ttl. Beside this, the query plan did perfectly and the time is considerably reasonable.
+\item[q9:] q9 has the same complexity as q8. The query plan is still match $\langle X, p, o\rangle$ and find $\langle X, p, Y\rangle$, and it is perfect in a high level sense. Possibly, if we choose a different start ($?X$, $?Y$, $?Z$, in the first, second, and third pattern), we might have a different timing because the size of them are different. However, like q7, we did not track the size of the index map, so we don't know. 
+\item[q10:] Same as q1 and q3. It is slightly slower because of larger cordiality in each triple pattern.
+\item[q11:] Like q10. It is faster because it only needs to check 223 * 239 elements for  LUBM-001-mat.ttl. 
+\item[q12:] It is super fast because the query plan is perfect and the size is small. It first takes $\langle X, p, o\rangle$, then $\langle X, p, Y\rangle$, and then all other are just $\langle s, p, o\rangle$ and can be verified very quickly.
+\item[q13:]  Because of the selectivity, the plan first do the first pattern and then the second. There are 8330 chooses for the first pattern but just one for the second. If we do the second one first, it will be quick. But again, we don't know this ahead and the first pattern has lower selectivity. 
+\item[q14:] This one is just like q6, but from another direction. It needs to traverse 5916 elements for LUBM-001-mat.ttl, which is smaller than q6, so it is quicker. Fair enough. 
 \end{enumerate}
 
 \end{enumerate}
