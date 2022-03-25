@@ -7,6 +7,7 @@
 #include <iterator>
 
 #include "RDF_index.h"
+#include "Turtle_handler.h"
 
 #define XXX 8
 #define XPX 7
@@ -18,10 +19,10 @@
 #define SPO 1
 
 class Query_planner{
-
+    class Turtle_handler* Turtle_handler;
 public:
 
-    Query_planner();
+    Query_planner(class Turtle_handler* Turtle_handler);
     void plan_query(std::vector<struct Triple>& U, std::vector<struct Triple>& P);
     void var(const struct Triple t, std::vector<int>& variables);
     void intersection(std::vector<int> v1, std::vector<int> v2, std::vector<int>& v_intersection);

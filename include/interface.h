@@ -18,6 +18,7 @@ class Interface{
 
 public:
     Interface();
+    ~Interface();
     void LOAD(std::vector<std::string> token_input);
     void PRINT_TABLE(std::vector<std::string> token_input);
     void SELECT(std::string input);

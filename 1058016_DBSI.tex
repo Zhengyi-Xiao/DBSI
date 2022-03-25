@@ -67,7 +67,7 @@ Your degree: MSc Advanced Computer Science
 	
 	Six index maps are also maintained. $I_s$, $I_p$, and $I_o$ store the head of the $sp$-list, $p$-list, and $op$-list, respectively. $I_{sp}$ maps $s$ and $p$ to the first occurrence of the triple with the same $s$ and $p$ in the $sp$-list. So does $I_{op}$. $I_{spo}$ stores the row number of each triple in the table. 
 	
-	\item {\large A}DD(Triple $t$) consists of two parts; first, append a new row to the end of the RDF-index table, and second, associates the new row with all six index maps and alter the pointer columns, $N_{sp}$, $N_{op}$, and $N_p$, to point to the correct row.
+	\item {\large A}DD(Triple $t$) consists of two parts; first, append a new row to the end of the RDF-index table, and second, associates the new row with all six index maps and alters the pointer columns, $N_{sp}$, $N_{op}$, and $N_p$, to point to the correct row.
 	
 	Since there is no need to worry about the concurrency in our setting, the RDF-index table is maintained as a fixed size vector of int list of size 6 with each position stands for different columns. Therefore, for each time we add a triple into the table, we simply append it to the last. However, if the triple is already in the $I_{spo}$ map, we skip it. When the size reaches its limit, the entire table will resize. 
 
@@ -91,12 +91,12 @@ Your degree: MSc Advanced Computer Science
 \end{algorithmic}
 \end{algorithm}
 
-The columns, $N_{sp}$, $N_{op}$, and $N_p$, are maintained in a linked-list-like manner and are updated simultaneously with the index maps. Take $N_{op}$ for example, if $T_{new}$ does not appear in the $I_o$ and $I_{op}$, it means that  $T_{new}$ is a new triple that the triple table never see before. Therefore, we insert $T_{new}$ into the index map $I_o$ and $I_{op}$ (case1). If we found a $T$ with $T.o = T_{new}.o$ and $T.o = T_{new}.p$, then we insert $T_{new}$ after $T$, and point the next of $T_{new}$ to the original next of the $T$ (case3). A special case is that when there is no next for $T$ and it is handled in case 2 of the Algorithm \eqref{alg:updateIop}. The case of $N_{sp}$ and $N_p$ is similar.
+The columns, $N_{sp}$, $N_{op}$, and $N_p$, are maintained in a linked-list-like manner and are updated simultaneously with the index maps. Take $N_{op}$ for example, if $T_{new}$ does not appear in the $I_o$ and $I_{op}$, it means that  $T_{new}$ is a new triple that the triple table never see before. Therefore, we insert $T_{new}$ into the index map $I_o$ and $I_{op}$ (case1). If we found a $T$ with $T.o = T_{new}.o$ and $T.p = T_{new}.p$, then we insert $T_{new}$ after $T$, and point the next of $T_{new}$ to the original next of the $T$ (case3). A special case is that when there is no next for $T$ and it is handled in case 2 of the Algorithm \eqref{alg:updateIop}. The case of $N_{sp}$ and $N_p$ is similar.
 
 \begin{algorithm}[H]
 \caption{Update $I_{op}$($T_{new}$)}\label{alg:updateIop}
 \begin{algorithmic}
-\State $T$ = the first triple with $T.o = T_{new}.o$ and $T.o = T_{new}.p$
+\State $T$ = the first triple with $T.o = T_{new}.o$ and $T.p = T_{new}.p$
 \If{$T$ does not exist}\Comment{Case 1}
 \State make $T_{new}$ the head of $I_o$ and $I_{op}$ 
 \EndIf
@@ -117,7 +117,7 @@ The columns, $N_{sp}$, $N_{op}$, and $N_p$, are maintained in a linked-list-like
 \item 
 
  
-Let $t = \langle s, p, o\rangle$ be a triple pattern and $X$, $Y$, and $Z$ be free variables. There are two inputs for EVALUATE; $t$, the matching pattern, and \textit{index}, the previous state. There are also two outputs, $t'$, the answer to the math pattern, \textit{index}, the current state. The index are usually the pointer to the next triple, but there are two sentinel; \textit{EndOfNode} will tell the caller there is no more next triple to search and \textit{EndSearch} stands for an illegal search. The general frame work is shown in Algorithm \eqref{alg:evaluate}.
+Let $t = \langle s, p, o\rangle$ be a triple pattern and $X$, $Y$, and $Z$ be free variables. There are two inputs for EVALUATE; $t$, the matching pattern, and \textit{index}, the previous state. There are also two outputs, $t'$, the answer to the match pattern, \textit{index}, the current state. The index are usually the pointer to the next triple, but there are two sentinels; \textit{EndOfNode} will tell the caller there is no more next triple to search and \textit{EndSearch} stands for an illegal search. The general frame work is shown in Algorithm \eqref{alg:evaluate}.
 
 \begin{algorithm}[H]
 \caption{Framework}\label{alg:evaluate}
@@ -132,17 +132,16 @@ Let $t = \langle s, p, o\rangle$ be a triple pattern and $X$, $Y$, and $Z$ be fr
 
 Inside EVALUATE, there are four categories we need to discuss, from no free variable to all three are variables. 
 
-When there is not free variable, EVALUATE will check if $t$ is in $I_{spo}$ map, if it is return the triple and set the index be \textit{EndOfNode}. Otherwise, it will return nothing and set the index be \textit{EndSearch}. The pseudo-code is shown in Algorithm \eqref{alg:evaluateSPO}. 
+When there is not free variable, EVALUATE will check if $t$ is in $I_{spo}$ map, if it is return the triple and set the index to be \textit{EndOfNode}. Otherwise, it will return nothing and set the index be \textit{EndSearch}. The pseudo-code is shown in Algorithm \eqref{alg:evaluateSPO}. 
 
 \begin{algorithm}[H]
 \caption{Evaluate $\langle s, p, o\rangle$}\label{alg:evaluateSPO}
 \begin{algorithmic}
 \Require $t = \langle s, p, o\rangle$
 \If{$t$ in $I_{spo}$}	
-\State \textit{index} $\leftarrow$ \textit{EndOfNode}
-\State \Return t
+\State \textit{index} $\leftarrow$ \textit{EndOfNode}, $t'\leftarrow t$
 \Else
-\State \textit{index} $\leftarrow$ \textit{EndSearch} 
+\State \textit{index} $\leftarrow$ \textit{EndSearch}, $t'\leftarrow$ Null
 \EndIf
 \end{algorithmic}
 \end{algorithm}
@@ -167,7 +166,34 @@ When there is one free variable, there are three cases: $\langle X, p, o\rangle$
 \end{algorithmic}
 \end{algorithm}
 
-$\langle s, p, X\rangle$ is similar. Since we don't have index on $s$ and $o$,  $\langle s, X, o\rangle$ needs some extra works. Assume that the size of the $I_s$ is smaller than that of $I_o$, then for each matching pattern $t$, we iterate over $s$ in $I_s$, 
+$\langle s, p, X\rangle$ is similar. Since we don't have index on $s$ and $o$,  $\langle s, X, o\rangle$ needs some extra works. To match this pattern, we can traverse either $sp$-list or $op$-list and skip the triples does not match on $s$ and $o$. The choose of the list depends on the size of $I_s[s]$ and $I_o[o]$ and we use the smaller one. The pseudo-code is in Algorithm \eqref{alg:evaluateSXO}.
+
+\begin{algorithm}[H]
+\caption{Evaluate $\langle s, X, o\rangle$}\label{alg:evaluateSXO}
+\begin{algorithmic}
+\Require $t = \langle s, X, o\rangle$, where $X$ is a special code stands for a free variable. 
+\If{$|I_s[s]| < |I_o[o]|$}
+\Do
+\If{it is the first search}
+\State $t'\leftarrow$ the triple $I_{sp}$ points to, \textit{index} $\leftarrow$ $t'.N_{sp}$.
+\Else 
+\State $t'\leftarrow t.N_{sp}$, \textit{index} $\leftarrow t'.N_{sp}$
+\EndIf
+\doWhile{$t'.s \neq s$ and $t'.o\neq o$ and \textit{index} $\neq$ \textit{EndOfNode}}
+\Else
+\Do
+\If{it is the first search}
+\State $t'\leftarrow$ the triple $I_{op}$ points to, \textit{index} $\leftarrow$ $t'.N_{op}$.
+\Else 
+\State $t'\leftarrow t.N_{op}$, \textit{index} $\leftarrow t'.N_{op}$
+\EndIf
+\doWhile{$t'.s \neq s$ and $t'.o\neq o$ and \textit{index} $\neq$ \textit{EndOfNode}}
+\EndIf
+\If{$t'.s \neq s$ and $t'.o\neq o$}\Comment{corner case}
+\State \textit{index} = \textit{EndSearch}
+\EndIf 
+\end{algorithmic}
+\end{algorithm}
 
 
 When there are two free variables, there are also three cases: $\langle X, Y, o\rangle$, $\langle X, p, Z\rangle$, and $\langle s, Y, Z\rangle$, where $X$, $Y$, and $Z$ can be equal. Their idea is similar; $\langle X, Y, o\rangle$, for example, we first find $I_o[t.o]$ and traverse the $op$-list till the end. If $X=Y$, then we skip those triples with $p \neq o$. The pseudo-code is given in Algorithm \eqref{alg:evaluateXYO}\footnote{Even I found myself a little confused by what I wrote in the do-while loop, so this footnote might be helpful. After a few minutes of thinking, I found only when we want $X=Y$, the condition $t'.p \neq t'.s$ will make the loop start and try to locate the one with $t.p = t.s$. If $X\neq Y$, the loop will never start and return immediately.}.
@@ -175,7 +201,7 @@ When there are two free variables, there are also three cases: $\langle X, Y, o\
 \begin{algorithm}[H]
 \caption{Evaluate $\langle X, Y, o\rangle$}\label{alg:evaluateXYO}
 \begin{algorithmic}
-\Require $t = \langle X, Y, o\rangle$, where $X$ and $Y$ are special code stands for variables. 
+\Require $t = \langle X, Y, o\rangle$, where $X$ and $Y$ are special codes stand for variables. 
 \Do
 \If{it is the first search}
 \State $t'\leftarrow$ the triple $I_{o}$ points to, \textit{index} $\leftarrow$ $t'.N_{op}$.
@@ -188,7 +214,7 @@ When there are two free variables, there are also three cases: $\langle X, Y, o\
 \EndIf
 \end{algorithmic}
 \end{algorithm}
-The idea for the other two patterns are similar, but starts from $I_p$ or $I_s$ map and traverse the $p$-list or $sp$-list.
+The idea for the other two patterns is similar; starts from $I_p$ or $I_s$ map and traverse the $p$-list or $sp$-list.
 
 When there are three free variables, the paper suggests to match, for example, the patterns like $\langle X, Y, Z\rangle$, we need to iterate over the triple table; if we want $X = Y$,  we skip those $X\neq Y$. However, this is not efficient. Therefore, I modified a little bit and the idea and pseudo-code are discussed in 2.a, where I put everything that is different from paper there. 
 
@@ -199,7 +225,7 @@ When there are three free variables, the paper suggests to match, for example, t
 
 This component is included in RDF\_index.cpp, in which ADD and EVALUATE are implemented as suggested in the problem 1. There are a few things that is slightly different from the paper. 
 
-1) I used XXHASH\footnote{https://cyan4973.github.io/xxHash/} by Facebook instead of Jenkings hashing, because it achieves state-of-the-art excellent performance on both long and small inputs. 
+1) I used XXHASH\footnote{https://cyan4973.github.io/xxHash/} by Facebook instead of Jenkings hashing, because it achieves state-of-the-art excellent performance on both long and small inputs and it is true. Jenkings hashing is implemented in RDF\_index.h and is commented. I did some tests and observed that Jenkings is about 10\% slower than XXHASH. 
 
 2) Instead of open addressing, I eventually choose std::unordered\_map for index maps $I_{sp}$, $I_{op}$ and $I_{spo}$. I had an open addressing hash implemented in HashTable.cpp and HashTable.h (attached in the submission), but it was much slower than the unordered\_map (by about 20\% or more).
 
@@ -234,19 +260,25 @@ This part is in the file SPARQL\_engine.cpp and it is implemented strictly based
 
 \item The greedy join order optimization query planner.
 
-This part can be sought in the file query\_planner.cpp. I see what the model answer is trying to say but I believe there are some minor mistakes so I change it slightly but it is still $O(n)$, where $n$ is the number of triple patterns we try to fit. 
+This part can be sought in the file query\_planner.cpp. I see what the model answer is trying to say, but I believe there are some minor mistakes, so I made some slight changes, but it is still $O(n)$, where $n$ is the number of triple patterns we try to fit. 
 
-There were two things I modified. Firstly, the last three lines should go to the outside while loop. Secondly and most importantly, I changed the criteria for updating the new triple patterns. In the model answer, the criteria is 
+There were three things I modified. Firstly, the last three lines should go to the outside while loop. Secondly and most importantly, I changed the criteria for updating the new triple patterns. In the model answer, the criteria is 
+
 \begin{equation}\label{criteria}
 	t_{best} = \perp \text{ or } score < score_{best} \text{ and either } var(t) = \emptyset \text{ or } var(t) \cap B \neq \emptyset.
 \end{equation}
+
 It is troublesome because it will always take the first unprocessed triple pattern as the best pattern and compare this with the remaining. However, it might cause some issues in many cases. For example, the following triple patterns 
 \begin{align*}
 	\langle X &,\quad 1,\quad 2\rangle \\
 	\langle Y &,\quad 2,\quad 3\rangle\\
 	\langle X &,\quad 4,\quad Y\rangle
 \end{align*}
-will produce the plan $\langle X, 1, 2\rangle \mapsto \langle Y, 2, 3\rangle \mapsto \langle X, 4, Y\rangle$ because even after we replace the $X$ in $\langle X, 4, Y\rangle$, this triple pattern still has higher selectivity than $\langle Y, 2, 3\rangle$. However, this plan will create an unnecessary cross product and I believe the criteria \eqref{criteria} meant choosing the triple pattern that has the lowest selectivity and includes some variables that are in the  processed patterns. Therefore, the new pseudo-code goes as the follow. 
+will produce the plan $\langle X, 1, 2\rangle \mapsto \langle Y, 2, 3\rangle \mapsto \langle X, 4, Y\rangle$ because even after we replace the $X$ in $\langle X, 4, Y\rangle$, this triple pattern still has higher selectivity than $\langle Y, 2, 3\rangle$. Therefore, this plan will create an unnecessary cross product, and I believe the criteria \eqref{criteria} meant choosing the triple pattern that has the lowest selectivity and includes some variables that are in the processed patterns. Thus, I made some modifications to the algorithm, and it will 1) as long as an unprocessed pattern has a variable that is processed, we will always consider this pattern and 2) if this pattern has lower selectivity than the previous one, we choose this pattern as the best triple. With this modification, the plan becomes $\langle X, 1, 2\rangle \mapsto \langle X, 4, Y\rangle \mapsto \langle Y, 2, 3\rangle$. 
+
+Thirdly, there are some cases that $|\langle X, 1, 2\rangle| = 10,000$ but $|\langle Y, 2, 3\rangle| = 10$. If we ignore the size of the pattern, we might produce a lot of unnecessary joins, but we can store this information while we are updating $I_{op}$. Therefore, I also record the size of $I_{op}[op]$ and $I_{sp}[sp]$, and we choose the best triple pattern based on both selectivity and size. Our final query plan is $\langle Y, 2, 3\rangle \mapsto \langle X, 4, Y\rangle \mapsto \langle X, 1, 2\rangle$, which is the most optimal now. Notice that only $I_{op}$ and $I_{sp}$ are considered because they are the most common two cases, and recording the size of other index maps would produce a lot of overhead in creating and indexing the database. The majority of the overhead is due to updating unordered\_map and vector. 
+
+The pseudo-code goes as the following. 
 
 \begin{algorithm}[H]
 \caption{New-Plan-Query($U$)}\label{alg:greedy}
@@ -260,7 +292,13 @@ will produce the plan $\langle X, 1, 2\rangle \mapsto \langle Y, 2, 3\rangle \ma
 \If{$t_{best} = \perp$}
 \State intersected = ($var(t) \cap B \neq \emptyset$)
 \State $t_{best} \leftarrow t$, $score_{best} \leftarrow score$
-\ElsIf{intersected}
+\EndIf
+\If{$t$ and $t_{best}$ are both of the form $\langle X, p, o\rangle$}\Comment{$\langle s, p, X\rangle$ is similar.}
+\If{$I_{op}[t] < I_{op}[t_{best}]$}
+\State $t_{best} \leftarrow t$, $score_{best} \leftarrow score$
+\EndIf
+\EndIf
+\If{intersected}
 \If{$score < score_{best}$ and either $var(t) = \emptyset$ or $var(t) \cap B \neq \emptyset$}
 \State $t_{best} \leftarrow t$, $score_{best} \leftarrow score$
 \EndIf
@@ -276,38 +314,37 @@ will produce the plan $\langle X, 1, 2\rangle \mapsto \langle Y, 2, 3\rangle \ma
 \end{algorithmic}
 \end{algorithm}
 
-In the new query plan, still, we take the first unprocessed triple pattern as our best plan at the beginning. However, we will mark down if the first pattern shares some common variables with some processed patterns. If it is, we will select the least selectivity pattern that also share some common variables in the remaining as in the model answer. However, if the first triple pattern does not share any processed variable, we pick the first pattern that shares some processed variables and then we search for the least selectivity pattern as before. The new plan in the example will now become $\langle X, 1, 2\rangle \mapsto \langle X, 4, Y\rangle \mapsto \langle Y, 2, 3\rangle$. 
 
-I also did some experiments showing that the strategy works. The testing protocol is the same as the one in the question 3. From the table 1, we see that there is a significant improvement for query 2, 7, 8, and 9. 
+I also did some experiments showing that the strategy works. The testing protocol is the same as the one in question 3. From table 1, we see a significant improvement in most of the queries. However, updating the additional index makes the load 20\% slower from 723 ms to 930 ms without O3 flag.
 
 \begin{table}[]\centering
 \begin{tabular}{|l|l|l|}
 \hline
     & Model Answer & New Query Plan \\ \hline
-q1  & 7            & 8              \\ \hline
-q2  & 10107        & 22             \\ \hline
-q3  & 24           & 25             \\ \hline
-q4  & 2            & 2              \\ \hline
-q5  & 37           & 37             \\ \hline
-q6  & 25           & 25             \\ \hline
-q7  & 64267        & 133            \\ \hline
-q8  & 801          & 128            \\ \hline
-q9  & 46215        & 250            \\ \hline
-q10 & 31           & 29             \\ \hline
-q11 & 1            & 1              \\ \hline
-q12 & 0            & 0              \\ \hline
-q13 & 33           & 35             \\ \hline
-q14 & 19           & 18             \\ \hline
+q1  & 4.69         & 0.095          \\ \hline
+q2  & 4579.05      & 36.433         \\ \hline
+q3  & 12.623       & 0.107          \\ \hline
+q4  & 1.649        & 0.773          \\ \hline
+q5  & 18.714       & 2.708          \\ \hline
+q6  & 8.351        & 8.417          \\ \hline
+q7  & 30227.6      & 4.295          \\ \hline
+q8  & 264.673      & 63.044         \\ \hline
+q9  & 17057.8      & 65.302         \\ \hline
+q10 & 18.469       & 0.092          \\ \hline
+q11 & 0.916        & 0.873          \\ \hline
+q12 & 0.703        & 0.334          \\ \hline
+q13 & 16.833       & 17.902         \\ \hline
+q14 & 6.336        & 6.789          \\ \hline
 \end{tabular}
-\caption{Time took to process and evaluate the query by the model answer and the new query plan in ms on the data set LUBM-001-mat.ttl.}
+\caption{Time took to process and evaluate the query by the model answer and the new query plan in ms on the data set LUBM-001-mat.ttl. Both two are run without O3 flag to avoid some internal optimizations affect the results.}
 \end{table}
 \item The component for parsing and importing Turtle files.
 
-This part is included in Turtle\_handler.cpp. The error checking increases the running time by a lot. 
+This part is included in Turtle\_handler.cpp. 
 
 \item The parser for SPARQL queries
 
-This part is included in query\_parser.cpp. My parser not only reads the query but also checks if the triple patterns are correct such as if the query is asking for something that is not presented in the database, it will throw a warning right away instead of feeding it into the query engine to create overhead. 
+This part is included in query\_parser.cpp. 
 
 \item The component implementing the command line
 
@@ -346,47 +383,51 @@ Hardware and Software Configuration:
 
 \item 
 
-We set a timeout if one instruction takes more than 3 minutes. 
-
+We set a timeout if one instruction takes more than 3 minutes. The following protocol can be found in protocol.cpp. If you want to run the load test, fill in the correct path to the data and uncomment the lines. It will take about 15 minutes to run. 
+\newpage
 Loading Data Test Protocol:
 
 \begin{enumerate}
 \item Turn off all irrelevant applications.
 \item Start a clean terminal.
-\item Make all and run the output file.
-\item Load one dataset and markdown the time. If timeout, mark TO. 
-\item Go back to step two repeat this process for 10 times.
-\item Take off the highest and the lowest and find the average. 
+\item Load dataset 001 and markdown the time. If timeout, mark TO. 
+\item Delete all objects.
+\item Load dataset 010 and markdown the time. If timeout, mark TO. 
+\item Delete all objects.
+\item Load dataset 100 and markdown the time. If timeout, mark TO. 
+\item Delete all objects.
+\item Go back to step ii repeat this process for 10 times.
+\item Take the average. 
 \end{enumerate}
+To eliminate the cache effect, I load 3 datasets one by one for 10 times instead of running a single dataset for 10 times. This will flush most of caches. Also, I should play my phone and don't touch my laptop while running.
 
 \item 
+We choose COUNT instead of SELECT and for each query. We set a timeout if one instruction takes more than 3 minutes. 
+
 
 Loading Data Test Protocol:
-
-We choose COUNT instead of SELECT and for each query. Still, we set a timeout if one instruction takes more than 3 minutes. 
 
 \begin{enumerate}
 \item Turn off all irrelevant applications.
 \item Start a clean terminal.
-\item Make all and run the output file.
+\item MAKE all and run the output file.
 \item Load one dataset. 
-\item Run a query and markdown the time. 
-\item Go back to the last step repeat this process for 10 times. 
-\item Take off the highest and the lowest and find the average. 
+\item Run 14 queries one by one and markdown the time. 
+\item Go back to the step v and  repeat 10 times. 
+\item Take the average. 
+\end{enumerate}
 
+To avoid the cache effect, I run 14 queries one by one for 10 times instead of running a single queries for 10 times.
 
 \end{enumerate}
 
-
-\end{enumerate}
-
-\item[3.b] The time needed to load and index the data and the time needed to produce all query answers for each RDF graph and query are showed in table 2 and table 3, respectively.
+\item[3.b] The time needed to load and index the data and the time needed to produce all query answers for each RDF graph and query are showed in Table 2 and Table 3, respectively. O3 flag is used\footnote{Looking at Table 1 and Table3, I am very surprised by how large O3 can improve.}.
 
 \begin{table}[H]\centering
 \begin{tabular}{|l|l|l|l|}
 \hline
                    & LUBM-001-mat & LUBM-010-mat & LUBM-100-mat \\ \hline
-Load \& Index Time & 902         & 11879        & 122583       \\ \hline
+Load \& Index Time & 242.153         & 4648.9        & 52543.5       \\ \hline
 \end{tabular}
 \caption{Time needed to load and index the data in ms.}
 \end{table}
@@ -397,47 +438,43 @@ Load \& Index Time & 902         & 11879        & 122583       \\ \hline
 \begin{tabular}{|l|l|l|l|}
 \hline
     & LUBM-001-mat & LUBM-010-mat & LUBM-100-mat \\ \hline
-q1  & 4.081        & 42.336       & 502.755      \\ \hline
-q2  & 22.829       & 237.585      & 2438.57      \\ \hline
-q3  & 12.408       & 131.304      & 1425.94      \\ \hline
-q4  & 1.573        & 10.439       & 132.892      \\ \hline
-q5  & 17.797       & 178.091      & 1935.87      \\ \hline
-q6  & 8.212        & 108.531      & 1044.5       \\ \hline
-q7  & 90.213       & 974.828      & 10386.4      \\ \hline
-q8  & 70.124       & 673.855      & 6589.79      \\ \hline
-q9  & 71.726       & 723.767      & 7494.22      \\ \hline
-q10 & 15.919       & 182.715      & 1907.54      \\ \hline
-q11 & 0.941        & 6.773        & 63.929       \\ \hline
-q12 & 0.259        & 1.833        & 18.833       \\ \hline
-q13 & 16.587       & 200.297      & 2066.33      \\ \hline
-q14 & 7.325        & 94.932       & 814.723      \\ \hline
+q1  & 0.0135       & 0.0173       & 0.0274       \\ \hline
+q2  & 5.3407       & 81.835       & 973.923      \\ \hline
+q3  & 0.0175       & 0.0261       & 0.037        \\ \hline
+q4  & 0.1237       & 0.1609       & 0.1897       \\ \hline
+q5  & 0.4445       & 0.6328       & 0.777        \\ \hline
+q6  & 1.1039       & 21.381       & 185.05       \\ \hline
+q7  & 0.6371       & 9.4067       & 118.804      \\ \hline
+q8  & 10.1652      & 12.1391      & 14.2116      \\ \hline
+q9  & 9.1657       & 132.945      & 1640.17      \\ \hline
+q10 & 0.0136       & 0.021        & 0.0286       \\ \hline
+q11 & 0.1625       & 0.219        & 0.2554       \\ \hline
+q12 & 0.0495       & 0.4495       & 0.6043       \\ \hline
+q13 & 2.8269       & 46.3258      & 635.152      \\ \hline
+q14 & 0.9463       & 16.8604      & 150.809      \\ \hline
 \end{tabular}
 \caption{Time needed to produce  all query answers in ms.}
 \end{table}
 
 \item[3.c]
 \begin{enumerate}
-\item[q1:] This query consists of two triple patterns and they are in the form of $\langle X, p, o\rangle$. Therefore, the algorithm just pick a $X$ in the first pattern and see if the $X$ can be fitted into the second pattern. Therefore, it is quick.
+\item[q1:] This query consists of two triple patterns, and they are both in the form of $\langle X, p, o\rangle$. My query plan picks the second one as a start because it is considerably smaller (1874 v.s. 4). Otherwise, it will be very slow, as Table 1 suggested. 
 
-\item[q2:] This query contains two groups, $\langle X, p, o\rangle$ and $\langle X, p, Z\rangle$, and each group has three triples. By my planning, the query is planned in find a $\langle X, p, o\rangle$ and find a $\langle X, p, Z\rangle$ that match the first pick, then pick whatever match the variable, $Z$, in the remaining unprocessed patterns. Therefore, it picks the least selectivity pattern in each step, resulting a very small running time. 
-\item[q3:] This one is similar to q1 but the time is different because they are different in size. In LUBM-001-mat.ttl, q3 has 5999 possible match in the first pattern and 6 in the second. However, q1 has 1874 in the first and 4 in the second. 
-\item[q4:] Though this query looks terrify, the speed is fast because all patterns share the same $X$ in $p$ and beside this, there is at most one free variable in each. Therefore, once $X$ is picked, the remaining is just to check if $Y$ can go with $X$. Also, the size is small, there are 447 possibility in the first pattern and  41 in the second pattern for  LUBM-001-mat.ttl. 
-\item[q5:] This one is similar to q1 and q3 but is much slower, which is because the search space is large. This one has 8330 possibility for the first pattern and  719 for the second. 
-\item[q6:] This query simply match just one pattern. No plan is needed. It is slower than q1 because it returns 7790 patterns more than q1, which is just 4. 
-\item[q7:] There is nothing wrong with the query plan on a high (selectivity) level  that it chooses the first pattern $\langle X, p, o\rangle$, then $\langle X, p , Y\rangle$, and matches the rest. The plan is perfect if we don't check how large is each triple patterns. There are two patterns like $\langle X, p, o\rangle$; the first one has the size 7790 and the second one is 1627. If we start from the second one, we could speed up by a lot. But we did the first one instead because it is the order it comes in and we didn't track the size of each index map to make adjustment.
-\item[q8:] q8 has one more free variable than q7 and has 7790 results for LUBM-001-mat.ttl. Beside this, the query plan did perfectly and the time is considerably reasonable.
-\item[q9:] q9 has the same complexity as q8. The query plan is still match $\langle X, p, o\rangle$ and find $\langle X, p, Y\rangle$, and it is perfect in a high level sense. Possibly, if we choose a different start ($?X$, $?Y$, $?Z$, in the first, second, and third pattern), we might have a different timing because the size of them are different. However, like q7, we did not track the size of the index map, so we don't know. 
-\item[q10:] Same as q1 and q3. It is slightly slower because of larger cordiality in each triple pattern.
-\item[q11:] Like q10. It is faster because it only needs to check 223 * 239 elements for  LUBM-001-mat.ttl. 
-\item[q12:] It is super fast because the query plan is perfect and the size is small. It first takes $\langle X, p, o\rangle$, then $\langle X, p, Y\rangle$, and then all other are just $\langle s, p, o\rangle$ and can be verified very quickly.
-\item[q13:]  Because of the selectivity, the plan first do the first pattern and then the second. There are 8330 chooses for the first pattern but just one for the second. If we do the second one first, it will be quick. But again, we don't know this ahead and the first pattern has lower selectivity. 
-\item[q14:] This one is just like q6, but from another direction. It needs to traverse 5916 elements for LUBM-001-mat.ttl, which is smaller than q6, so it is quicker. Fair enough. 
+\item[q2:] This query contains two groups of the forms $\langle X, p, o\rangle$, and $\langle X, p, Z\rangle$, and each group has three triples. The plan is to find a $\langle X, p, o\rangle$, then a $\langle X, p, Z\rangle$ that matches the first pick, and pick whatever matches the variable, $Z$, in the remaining unprocessed patterns. It picks not only the least selectivity pattern but also the smallest pattern in each step, resulting in a very short running time (compared to the model solution in Table 1). 
+\item[q3:] This one is similar to q1, but they have different sizes in each pattern. In LUBM-001-mat.ttl, q3 has 5999 possible matches in the first pattern and 6 in the second; q1 has 1874 in the first and 4 in the second. Therefore, q3 is slightly slower than q1. 
+\item[q4:] Though this query looks terrifying, the speed is fast because all patterns share the same $X$ in $p$, and besides this, there is at most one free variable in each. Therefore, once $X$ is picked, the remaining is just to check if $Y$ can go with $X$. 
+\item[q5:] This one is similar to q1 and q3 but is much slower because the search space is large. This one has 8330 possibilities for the first pattern and  719 for the second, so even starting from the second one would slow down by a lot. 
+\item[q6:] This query simply matches just one pattern. No plan is needed. From the smallest to the largest dataset, the result sizes are 7790, 99566, and 1048532. So the time increases as we expected.
+\item[q7:] There are two triples like $\langle X, p, o\rangle$. Since the first one has the size 7790 and the second one is 1627, starting at the second one, the performance is much better (see Table 1). 
+\item[q8:] All three datasets produce 7790 results, so the time is about the same. We also have a reasonable query plan because pattern 1 has 7790 matches in the smallest dataset but 1048532 matches in the largest dataset. However, pattern 3 has 239 possible matches among all datasets, which is what the plan chooses to start. 
+\item[q9:] It is like q8, but the first three patterns vary in size among three datasets and increase by ~12x. So the time increases as the dataset goes large. 
+\item[q10:] Same as q1 and q3. 
+\item[q11:] Like q10, the performance of q1, q3, q10, and q11 are good because they choose the pattern with the smallest size to start.
+\item[q12:] It is almost like q11. It first finds the smallest of the form $\langle X, p, o\rangle$ and matches $\langle X, p, Y\rangle$. Then all others are just $\langle s, p, o\rangle$ and can be verified very quickly. 
+\item[q13:]  The plan first takes $\langle X, p, o\rangle$ and then $\langle s, p, X\rangle$. There are 8330 choices for the first pattern but just one for the second. If we do the second one first, it will be quick, but the selectivity is more important than the actual size by the greedy assumption in the paper. 
+\item[q14:] Same as q6. The running time increases as the size increases. 
 \end{enumerate}
-
 \end{enumerate}
-
-
-
 
 
 

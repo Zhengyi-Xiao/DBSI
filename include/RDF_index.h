@@ -36,12 +36,30 @@ struct Triple {
      }
 };
 
+struct idx_size{
+    int idx, size;
+};
+
 struct key_hash : public std::unary_function<Triple, std::size_t>{
     std::size_t operator()(const Triple& t) const{
         char concatenated[12];
         std::memcpy(concatenated, (char*)&t.s, sizeof(int));
         std::memcpy(concatenated+4, (char*)&t.p, sizeof(int));
         std::memcpy(concatenated+8, (char*)&t.o, sizeof(int));
+        /* 
+        //Jenkings hashing
+        size_t i = 0;
+        uint32_t hash = 0;
+        while (i != 12) {
+            hash += concatenated[i++];
+            hash += hash << 10;
+            hash ^= hash >> 6;
+        }
+        hash += hash << 3;
+        hash ^= hash >> 11;
+        hash += hash << 15;
+        return hash;
+        */
         return XXH32(concatenated, 12, 0); // XXHASH is used
     }
 };
@@ -52,21 +70,19 @@ struct key_equal : public std::binary_function<Triple, Triple, bool>{
     }
 };
 
-typedef std::unordered_map<const Triple, int, key_hash, key_equal> map_t;
+typedef std::unordered_map<const Triple, idx_size, key_hash, key_equal> map_t;
 
 class RDF_index{
 
 private:
     int num_element = 0;
-    int size_Is = 0; 
-    int size_Io = 0;
     std::vector<int*>* table;
     std::vector<int> *Is, *Ip, *Io;
-    map_t *Isp, *Iop, *Ispo;
+    std::vector<int> *size_Is, *size_Io;
 
 public:
     RDF_index();
-
+    ~RDF_index();
     void add(struct Triple t);
     void resize();
     void update_Isp(struct Triple t);
@@ -90,7 +106,7 @@ public:
     void evaluate_XXX(struct Triple t, struct Triple& result, int& index, int& sub_index);
 
     int size_of_table();
-
+    map_t *Isp, *Iop, *Ispo;
 };
 
 #endif

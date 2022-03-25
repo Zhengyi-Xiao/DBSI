@@ -15,6 +15,7 @@
 
 #define FAIL    -1
 #define SUCCES  1
+#define INITIAL_CAP 16384
 
 class Turtle_handler{
 private:
@@ -22,6 +23,7 @@ private:
 
 public:
     Turtle_handler();
+    ~Turtle_handler();
     int load(std::string file_name);
 
     std::vector<std::string>* idx2IRI;
