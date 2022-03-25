@@ -99,7 +99,7 @@ void load_test(std::string file_path0, std::string file_path1, std::string file_
 int main(){
     
     std::cout << "*** Measure Time Took on Load ***" << std::endl;
-    load_test("data/LUBM-001-mat.ttl", "data/LUBM-010-mat.ttl", "data/LUBM-100-mat.ttl");
+    //load_test("data/LUBM-001-mat.ttl", "data/LUBM-010-mat.ttl", "data/LUBM-100-mat.ttl");
     
     
     std::cout << "** Measure Time Took on Queries **" << std::endl;
