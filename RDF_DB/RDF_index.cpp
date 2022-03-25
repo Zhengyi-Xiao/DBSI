@@ -8,7 +8,12 @@ RDF_index::RDF_index(){
     this->Ip = new std::vector<int>;
     this->Ip->resize(INITIAL_CAP);
     this->Io = new std::vector<int>;
-    this->Io->resize(INITIAL_CAP);            
+    this->Io->resize(INITIAL_CAP);
+
+    this->size_Is = new std::vector<int>;
+    this->size_Is->resize(INITIAL_CAP);            
+    this->size_Io = new std::vector<int>;
+    this->size_Io->resize(INITIAL_CAP);            
 
     this->Isp  = new map_t();
     this->Iop  = new map_t();
@@ -27,6 +32,8 @@ void RDF_index::resize(){
     this->Is->resize(current_size << 1);    
     this->Ip->resize(current_size << 1);
     this->Io->resize(current_size << 1);
+    this->size_Io->resize(current_size << 1);
+    this->size_Is->resize(current_size << 1);
 }
 
 // Update Isp index
@@ -34,19 +41,20 @@ inline void RDF_index::update_Isp(struct Triple t){
     t.o = 0;
     if((*this->Is)[t.s] == 0){ // if it is the first occurrence， create a new index for Is also
         (*this->Is)[t.s] = this->num_element;
-        (*this->Isp)[t] = this->num_element;
-        ++this->size_Is;
+        (*this->Isp)[t] = {this->num_element, 0};
     }
     else if(this->Isp->find(t) != this->Isp->end()){ // Algorithm 4 in the paper
-        if((*this->table)[(*this->Isp)[t] - 1][Nsp] != EndOfNode)
-            (*this->table)[this->num_element - 1][Nsp] = (*this->table)[(*this->Isp)[t] - 1][Nsp];
-        (*this->table)[(*this->Isp)[t] - 1][Nsp] = this->num_element - 1;
+        if((*this->table)[(*this->Isp)[t].idx - 1][Nsp] != EndOfNode)
+            (*this->table)[this->num_element - 1][Nsp] = (*this->table)[(*this->Isp)[t].idx - 1][Nsp];
+        (*this->table)[(*this->Isp)[t].idx - 1][Nsp] = this->num_element - 1;
     }
     else{ // special case when only the head of the linked list exists, in such case, makes the new node the next
-        (*this->Isp)[t] = this->num_element;
+        (*this->Isp)[t].idx = this->num_element;
         (*this->table)[this->num_element - 1][Nsp] = (*this->Is)[t.s] - 1;
         (*this->Is)[t.s] = this->num_element;
     }
+    ++(*this->size_Is)[t.s];
+    ++((*this->Isp)[t].size);
 }
 
 // Update Iop index
@@ -54,19 +62,20 @@ inline void RDF_index::update_Iop(struct Triple t){
     t.s = 0;
     if((*this->Io)[t.o] == 0){  // if it is the first occurrence， create a new index for Io also
         (*this->Io)[t.o] = this->num_element;
-        (*this->Iop)[t] = this->num_element;
-        ++this->size_Io;
+        (*this->Iop)[t] = {this->num_element, 0};
     }
     else if(this->Iop->find(t) != this->Iop->end()){ // Algorithm 4 in the paper
-        if((*this->table)[(*this->Iop)[t] - 1][Nop] != EndOfNode)
-            (*this->table)[this->num_element - 1][Nop] = (*this->table)[(*this->Iop)[t] - 1][Nop];
-        (*this->table)[(*this->Iop)[t] - 1][Nop] = this->num_element - 1;
+        if((*this->table)[(*this->Iop)[t].idx - 1][Nop] != EndOfNode)
+            (*this->table)[this->num_element - 1][Nop] = (*this->table)[(*this->Iop)[t].idx - 1][Nop];
+        (*this->table)[(*this->Iop)[t].idx - 1][Nop] = this->num_element - 1;
     }
     else{ // special case when only the head of the linked list exists, in such case, makes the new node the next
-        (*this->Iop)[t] = this->num_element;
+        (*this->Iop)[t].idx = this->num_element;
         (*this->table)[this->num_element - 1][Nop] = (*this->Io)[t.o] - 1;
         (*this->Io)[t.o] = this->num_element;
     }
+    ++(*this->size_Io)[t.o];
+    ++((*this->Iop)[t].size);
 }
 
 // Update the Ip index list
@@ -104,7 +113,7 @@ void RDF_index::add(struct Triple t){
     update_Isp(t);
     update_Iop(t);
     update_Ip(t);
-    this->Ispo->emplace(t, this->num_element);
+    (*this->Ispo)[t] = {this->num_element, 1};
 }
 
 // The following evaluate functions are implemented strictly based on what paper described.
@@ -132,12 +141,12 @@ inline void RDF_index::evaluate_SYZ(struct Triple t, struct Triple& result, int&
 
 inline void RDF_index::evaluate_SPZ(struct Triple t, struct Triple& result, int& index){
     t.o = 0;
-    if((*this->Isp)[t] == 0){
+    if((*this->Isp)[t].idx == 0){
         index = EndSearch;
         return;
     }
     if(index == FirstSearch){
-        COPY(result, index, (*this->table)[(*this->Isp)[t] - 1], Nsp);
+        COPY(result, index, (*this->table)[(*this->Isp)[t].idx - 1], Nsp);
     }
     else{
         COPY(result, index, (*this->table)[index], Nsp);
@@ -148,12 +157,12 @@ inline void RDF_index::evaluate_SPZ(struct Triple t, struct Triple& result, int&
 
 inline void RDF_index::evaluate_XPO(struct Triple t, struct Triple& result, int& index){
     t.s = 0;
-    if((*this->Iop)[t] == 0){
+    if((*this->Iop)[t].idx == 0){
         index = EndSearch;
         return;
     }
     if(index == FirstSearch){
-        COPY(result, index, (*this->table)[(*this->Iop)[t] - 1], Nop);
+        COPY(result, index, (*this->table)[(*this->Iop)[t].idx - 1], Nop);
     }
     else{
         COPY(result, index, (*this->table)[index], Nop);
@@ -163,7 +172,7 @@ inline void RDF_index::evaluate_XPO(struct Triple t, struct Triple& result, int&
 }
 
 inline void RDF_index::evaluate_SPO(struct Triple t, struct Triple& result, int& index){
-    if((*this->Ispo)[t] != 0){
+    if((*this->Ispo)[t].idx != 0){
         COPY_TRIPLE(result, t);
         index = EndOfNode;
     }
@@ -191,7 +200,7 @@ inline void RDF_index::evaluate_XYO(struct Triple t, struct Triple& result, int&
 }
 
 inline void RDF_index::evaluate_SYO(struct Triple t, struct Triple& result, int& index){
-   if(this->size_Is < this->size_Io){
+   if((*this->size_Is)[t.s] < (*this->size_Io)[t.o]){
         do{
             if(index == FirstSearch){
                 if((*this->Is)[t.s] == 0){
@@ -374,4 +383,19 @@ void RDF_index::evaluate(struct Triple t, struct Triple& result, int& index, int
         }
     }
 
+}
+
+RDF_index::~RDF_index(){
+    for(auto kv : *this->table){
+        delete kv;
+    }
+	delete this->table;
+    delete this->Is; 
+    delete this->Ip;
+    delete this->Io;
+    delete this->Isp;
+    delete this->Iop;
+    delete this->Ispo;
+    delete this->size_Io;
+    delete this->size_Is;      
 }

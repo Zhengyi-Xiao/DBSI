@@ -4,7 +4,7 @@
 Turtle_handler::Turtle_handler(){
     this->table   = new RDF_index();
     this->idx2IRI = new std::vector<std::string>();
-    this->idx2IRI->resize(1024);
+    this->idx2IRI->resize(INITIAL_CAP);
     this->IRI2idx = new std::unordered_map<std::string, int>();
 }
 
@@ -90,4 +90,10 @@ int Turtle_handler::load(std::string file_name){
     if (line)
         free(line);
     return SUCCES;
+}
+
+Turtle_handler::~Turtle_handler(){
+    delete this->table;
+    delete this->idx2IRI;
+    delete this->IRI2idx;
 }

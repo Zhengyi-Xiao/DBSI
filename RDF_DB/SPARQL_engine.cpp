@@ -26,9 +26,9 @@ void SPARQL_engine::join_helper(std::unordered_map<int, int> & sigma, int i){
             for(auto kv : *this->query->Voutput){
                 std::string output = this->query->Turtle_handler->idx2IRI->at(sigma[kv.second]);
                 if(output.size() > 5 and output.substr(0,4) == "http") // to see if it is a IRI
-                    std::cout << "<" << this->query->Turtle_handler->idx2IRI->at(sigma[kv.second]) << ">\t";
+                    std::cout << "<" << this->query->Turtle_handler->idx2IRI->at(sigma[kv.second]) << "> \t";
                 else
-                    std::cout << "\"" << this->query->Turtle_handler->idx2IRI->at(sigma[kv.second]) << "\"\t";
+                    std::cout << "\"" << this->query->Turtle_handler->idx2IRI->at(sigma[kv.second]) << "\" \t";
             }
             std::cout << std::endl;
         }

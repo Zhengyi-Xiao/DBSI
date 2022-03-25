@@ -2,8 +2,8 @@
 
 struct Triple NULL_TRIPLE =  {-1, -1, -1};
 
-Query_planner::Query_planner(){
-
+Query_planner::Query_planner(class Turtle_handler* Turtle_handler){
+    this->Turtle_handler = Turtle_handler;
 }
 
 /*
@@ -17,11 +17,22 @@ void Query_planner::plan_query(std::vector<struct Triple>& U, std::vector<struct
         for(auto t : U){
             int score = this->get_score(t, B);
             this->var(t, variables); this->intersection(variables, B, v_intersection);
+            /* Model Answer
+            if((t_best.s == -1 && t_best.p == -1 && t_best.o == -1) || 
+                (score < score_best && (variables.empty() || !v_intersection.empty()))){
+                    t_best = t; score_best = score;
+            }       
+            */
             if(t_best.s == -1 && t_best.p == -1 && t_best.o == -1){
                 intersected = !v_intersection.empty();
                 t_best = t; score_best = score;
-                continue;
             }
+            if(score == score_best){
+                if((score == 3 && (*this->Turtle_handler->table->Iop)[{0, t.p, t.o}].size < (*this->Turtle_handler->table->Iop)[{0, t_best.p, t_best.o}].size) ||
+                   (score == 4 && (*this->Turtle_handler->table->Isp)[{t.s, t.p, 0}].size < (*this->Turtle_handler->table->Isp)[{t_best.s, t_best.p, 0}].size)){
+                    t_best = t; score_best = score;
+                }
+            }            
             if(intersected){
                 if(score < score_best && (variables.empty() || !v_intersection.empty())){
                     t_best = t; score_best = score;
@@ -38,6 +49,7 @@ void Query_planner::plan_query(std::vector<struct Triple>& U, std::vector<struct
         this->union_sets(B, variables, B);
         this->difference(U, t_best);
     }
+    
 }
 
 // (s, p, o) ≺ (s, ?, o) ≺ (?, p, o) ≺ (s, p, ?) ≺ (?, ?, o) ≺ (s, ?, ?) ≺ (?, p, ?) ≺ (?, ?, ?)
