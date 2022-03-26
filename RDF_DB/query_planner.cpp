@@ -28,9 +28,17 @@ void Query_planner::plan_query(std::vector<struct Triple>& U, std::vector<struct
                 t_best = t; score_best = score;
             }
             if(score == score_best){
-                if((score == 3 && (*this->Turtle_handler->table->Iop)[{0, t.p, t.o}].size < (*this->Turtle_handler->table->Iop)[{0, t_best.p, t_best.o}].size) ||
-                   (score == 4 && (*this->Turtle_handler->table->Isp)[{t.s, t.p, 0}].size < (*this->Turtle_handler->table->Isp)[{t_best.s, t_best.p, 0}].size)){
-                    t_best = t; score_best = score;
+                if(t.s < 0){
+                    if((t_best.s < 0 && (*this->Turtle_handler->table->Iop)[{0, t.p, t.o}].size < (*this->Turtle_handler->table->Iop)[{0, t_best.p, t_best.o}].size) ||
+                       (t_best.o < 0 && (*this->Turtle_handler->table->Iop)[{0, t.p, t.o}].size < (*this->Turtle_handler->table->Isp)[{t_best.s, t_best.p, 0}].size)){
+                        t_best = t; score_best = score;
+                    }
+                }
+                if(t.o < 0){
+                    if((t_best.o < 0 && (*this->Turtle_handler->table->Isp)[{t.s, t.p, 0}].size < (*this->Turtle_handler->table->Isp)[{t_best.s, t_best.p, 0}].size) || 
+                       (t_best.s < 0 && (*this->Turtle_handler->table->Isp)[{t.s, t.p, 0}].size < (*this->Turtle_handler->table->Iop)[{0, t_best.p, t_best.o}].size)){
+                        t_best = t; score_best = score;
+                    }
                 }
             }            
             if(intersected){

@@ -226,7 +226,7 @@ When there are three free variables, the paper suggests to match, for example, t
 
 This component is included in RDF\_index.cpp, in which ADD and EVALUATE are implemented as suggested in the problem 1. There are a few things that is slightly different from the paper. 
 
-1) I used XXHASH\footnote{https://cyan4973.github.io/xxHash/} by Facebook instead of Jenkings hashing, because it achieves state-of-the-art excellent performance on both long and small inputs and it is true. Jenkings hashing is implemented in RDF\_index.h and is commented. I did some tests and observed that Jenkings is about 4\% slower than XXHASH in average\footnote{For loading, XXHASH and Jenkings took 314.359, 4026.82, and 53525.3,  323.914, 4206.85, and 58582.4 ms on three datasets, respectively, achieving 2\%, 4\%, and 8\% speed up on each.}. 
+1) I used XXHASH\footnote{https://cyan4973.github.io/xxHash/} by Facebook instead of Jenkings hashing, because it achieves state-of-the-art excellent performance on both long and small inputs and it is true. Jenkings hashing is implemented in RDF\_index.h and is commented. I did some tests and observed that Jenkings is about 4\% slower than XXHASH in average\footnote{For loading, XXHASH and Jenkings took 314.359, 4026.82, and 323.914, 4206.85, and 58582.4 ms on three datasets, respectively, achieving 2\%, 4\%, and 8\% speed up on each.}. 
 
 2) Instead of open addressing, I eventually choose std::unordered\_map for index maps $I_{sp}$, $I_{op}$ and $I_{spo}$. I had an open addressing hash implemented in HashTable.cpp and HashTable.h (attached in the submission), but it was much slower than the unordered\_map by about 20\% or more.
 
@@ -261,9 +261,14 @@ This part is in the file SPARQL\_engine.cpp and it is implemented strictly based
 
 \item The greedy join order optimization query planner.
 
-This part can be sought in the file query\_planner.cpp. I see what the model answer is trying to say, but I believe there are some minor mistakes, so I made some slight changes, but it is still $O(n)$, where $n$ is the number of triple patterns we try to fit. 
+This part can be sought in the file query\_planner.cpp. I see what the model answer is trying to say, but I believe there are some minor mistakes, so I made some slight changes, but it is still $O(n^2)$, where $n$ is the number of triple patterns we try to fit. 
 
-There were three things I modified. Firstly, the last three lines should go to the outside while loop. Secondly and most importantly, I changed the criteria for updating the new triple patterns. In the model answer, the criteria is 
+There were four things I modified. 
+
+Firstly, the last three lines should go to the outside while loop. 
+
+
+Secondly, I changed the criteria for updating the new triple patterns. In the model answer, the criteria is 
 
 \begin{equation}\label{criteria}
 	t_{best} = \perp \text{ or } score < score_{best} \text{ and either } var(t) = \emptyset \text{ or } var(t) \cap B \neq \emptyset.
@@ -277,7 +282,26 @@ It is troublesome because it will always take the first unprocessed triple patte
 \end{align*}
 will produce the plan $\langle X, 1, 2\rangle \mapsto \langle Y, 2, 3\rangle \mapsto \langle X, 4, Y\rangle$ because even after we replace the $X$ in $\langle X, 4, Y\rangle$, this triple pattern still has higher selectivity than $\langle Y, 2, 3\rangle$. Therefore, this plan will create an unnecessary cross product, and I believe the criteria \eqref{criteria} meant choosing the triple pattern that has the lowest selectivity and includes some variables that are in the processed patterns. Thus, I made some modifications to the algorithm, and it will 1) as long as an unprocessed pattern has a variable that is processed, we will always consider this pattern and 2) if this pattern has lower selectivity than the previous one, we choose this pattern as the best triple. With this modification, the plan becomes $\langle X, 1, 2\rangle \mapsto \langle X, 4, Y\rangle \mapsto \langle Y, 2, 3\rangle$. 
 
-Thirdly, there are some cases that $|\langle X, 1, 2\rangle| = 10,000$ but $|\langle Y, 2, 3\rangle| = 10$. If we ignore the size of the pattern, we might produce a lot of unnecessary joins, but we can store this information while we are updating $I_{op}$. Therefore, I also record the size of $I_{op}[op]$ and $I_{sp}[sp]$, and we choose the best triple pattern based on both selectivity and size. Our final query plan is $\langle Y, 2, 3\rangle \mapsto \langle X, 4, Y\rangle \mapsto \langle X, 1, 2\rangle$, which is the most optimal now. Notice that only $I_{op}$ and $I_{sp}$ are considered because they are the most common two cases, and recording the size of other index maps would produce a lot of overhead in creating and indexing the database. The majority of the overhead is due to updating unordered\_map and vector. 
+Thirdly, there are some cases that $|\langle X, 1, 2\rangle| = 10,000$ but $|\langle Y, 2, 3\rangle| = 10$. If we ignore the size of the pattern, we might produce a lot of unnecessary joins, but we can store this information while we are updating $I_{op}$. Therefore, I also record the size of $I_{op}[op]$ and $I_{sp}[sp]$, and we choose the best triple pattern based on both selectivity and size. Our final query plan is $\langle Y, 2, 3\rangle \mapsto \langle X, 4, Y\rangle \mapsto \langle X, 1, 2\rangle$, which is the most optimal plan. Notice that only $I_{op}$ and $I_{sp}$ are considered because they are the most common cases, and recording the size of other index maps would produce overhead in indexing. Since the size of $I_{op}[t]$ and $I_{sp}[t]$ can be recored while we are inserting triple, the cost of maintaining the size is negligible\footnote{There are many tricks to save memory. For example, let's say $I_{sp}$ is an unordered\_map$<$int, int$>$, where the first int is the hash key and the second int is the index of row number. For a table size smaller than $2^{24}$ rows, we can use the higher $7$ bits to store the size and lower 24 bits to store the index. Other trick might apply also.}. 
+
+Lastly, the original query plan was based on the following precedence relation $\prec$ on selectivity of triple patterns: 
+\begin{equation*}
+	(s, p, o) \prec (s, ?, o) \prec (?, p, o) \prec (s, p, ?) \prec (?, ?, o) \prec (s, ?, ?) \prec (?, p, ?) \prec (?, ?, ?).
+\end{equation*}
+Now, since we have maintained the size of $(?, p, o)$ and $(s, p, ?)$, a new order of the selectivity should be used:
+\begin{equation*}
+	(s, p, o) \prec (s, ?, o) \prec (?, p, o) = (s, p, ?) \prec (?, ?, o) \prec (s, ?, ?) \prec (?, p, ?) \prec (?, ?, ?).
+\end{equation*}
+Therefore, when we are precessing these two patterns, instead of comparing the selectivity, we can directly compare the actual size of the triple patterns and select the smaller one. For example, for the following triple patterns,
+\begin{align*}
+	\langle X,\quad 1,\quad 2\rangle \\
+	\langle 2,\quad 3,\quad Y\rangle
+\end{align*}
+with $|\langle 2, 3, Y\rangle| > |\langle X, 1, 2\rangle|$ will produce the following query plan,
+\begin{align*}
+	\langle 2,\quad 3,\quad Y\rangle\\
+	\langle X,\quad 1,\quad 2\rangle
+\end{align*}
 
 The pseudo-code goes as the following. 
 
@@ -294,10 +318,8 @@ The pseudo-code goes as the following.
 \State intersected = ($var(t) \cap B \neq \emptyset$)
 \State $t_{best} \leftarrow t$, $score_{best} \leftarrow score$
 \EndIf
-\If{$t$ and $t_{best}$ are both of the form $\langle X, p, o\rangle$}\Comment{$\langle s, p, X\rangle$ is similar.}
-\If{$I_{op}[t] < I_{op}[t_{best}]$}
-\State $t_{best} \leftarrow t$, $score_{best} \leftarrow score$
-\EndIf
+\If{$t$ and $t_{best}$ are of the form $\langle X, p, o\rangle$ or $\langle s, p, X\rangle$}
+\State $t_{best}\leftarrow$ the one with a smaller size
 \EndIf
 \If{intersected}
 \If{$score < score_{best}$ and either $var(t) = \emptyset$ or $var(t) \cap B \neq \emptyset$}
@@ -334,10 +356,10 @@ q9  & 3783.54           & 7.3296              & 516.200065       \\ \hline
 q10 & 5.0822            & 0.011               & 462.018182       \\ \hline
 q11 & 0.2163            & 0.1319              & 1.6398787        \\ \hline
 q12 & 0.1445            & 0.0394              & 3.66751269       \\ \hline
-q13 & 3.828             & 2.5824              & 1.48234201       \\ \hline
+q13 & 3.828             & 0.0075              & 510.4       \\ \hline
 q14 & 0.9798            & 0.8059              & 1.2157836        \\ \hline
 \end{tabular}
-\caption{Time took to process and evaluate the query by the model answer and the new query plan in ms on the data set LUBM-001-mat.ttl. The new plan achieves 1000\% speed up in average on the 14 queries.}
+\caption{Time took to process and evaluate the query by the model answer and the new query plan in ms on the data set LUBM-001-mat.ttl. The new plan achieves more than 1000\% speed up in average on the 14 queries.}
 \end{table}
 
 \item The component for parsing and importing Turtle files.
@@ -435,25 +457,24 @@ Load \& Index Time & 314.359         & 4026.82        & 53525.3        \\ \hline
 \end{table}
 
 
-
 \begin{table}[H]\centering
 \begin{tabular}{|l|l|l|l|}
 \hline
     & LUBM-001-mat (ms) & LUBM-010-mat (ms) & LUBM-100-mat (ms) \\ \hline
-q1  & 0.0127            & 0.0223            & 0.0261            \\ \hline
-q2  & 4.6866            & 82.9776           & 981.228           \\ \hline
-q3  & 0.014             & 0.0294            & 0.0307            \\ \hline
-q4  & 0.1049            & 0.1585            & 0.1846            \\ \hline
-q5  & 0.3874            & 0.6226            & 0.7708            \\ \hline
-q6  & 0.974             & 21.7214           & 193.3             \\ \hline
-q7  & 0.5707            & 9.5294            & 127.532           \\ \hline
-q8  & 8.4174            & 12.1462           & 14.9884           \\ \hline
-q9  & 7.8172            & 135.772           & 1699.99           \\ \hline
-q10 & 0.0125            & 0.023             & 0.0296            \\ \hline
-q11 & 0.131             & 0.2286            & 0.2536            \\ \hline
-q12 & 0.041             & 0.4764            & 0.6153            \\ \hline
-q13 & 2.5041            & 47.1727           & 647.055           \\ \hline
-q14 & 0.802             & 17.0597           & 151.776           \\ \hline
+q1  & 0.0152            & 0.0143            & 0.0248            \\ \hline
+q2  & 4.4338            & 72.8246           & 708.436           \\ \hline
+q3  & 0.0162            & 0.0239            & 0.0274            \\ \hline
+q4  & 0.1119            & 0.1494            & 0.1827            \\ \hline
+q5  & 0.3815            & 0.5832            & 0.7189            \\ \hline
+q6  & 0.974             & 19.8416           & 186.464           \\ \hline
+q7  & 0.0674            & 0.0898            & 0.1306            \\ \hline
+q8  & 8.3644            & 11.2896           & 14.8031           \\ \hline
+q9  & 6.1915            & 100.174           & 1376.28           \\ \hline
+q10 & 0.0106            & 0.0202            & 0.0278            \\ \hline
+q11 & 0.1376            & 0.2023            & 0.2621            \\ \hline
+q12 & 0.0409            & 0.4233            & 0.5893            \\ \hline
+q13 & 0.0075            & 0.0388            & 0.5113            \\ \hline
+q14 & 0.7846            & 15.3656           & 141.389           \\ \hline
 \end{tabular}
 \caption{Time needed to produce  all query answers in ms.}
 \end{table}
@@ -468,12 +489,12 @@ q14 & 0.802             & 17.0597           & 151.776           \\ \hline
 \item[q5:] This one is similar to q1 and q3 but is much slower because the search space is large. This one has 8330 possibilities for the first pattern and  719 for the second, so even starting from the second one would slow down by a lot. 
 \item[q6:] This query simply matches just one pattern. No plan is needed. From the smallest to the largest dataset, the result sizes are 7790, 99566, and 1048532. So the time increases as we expected.
 \item[q7:] There are two triples like $\langle X, p, o\rangle$. Since the first one has the size 7790 and the second one is 1627, starting at the second one, the performance is much better (see Table 1). 
-\item[q8:] All three datasets produce 7790 results, so the time is about the same. We also have a reasonable query plan because pattern 1 has 7790 matches in the smallest dataset but 1048532 matches in the largest dataset. However, pattern 3 has 239 possible matches among all datasets, which is what the plan chooses to start. 
-\item[q9:] It is like q8, but the first three patterns vary in size among three datasets and increase by ~12x. So the time increases as the dataset goes large. 
+\item[q8:] All three datasets produce 7790 results, so the time is about the same. It also illustrate that we have an excellent query plan because pattern 1 has 7790 matches in the smallest dataset but 1048532 matches in the largest dataset. However, pattern 3 has 239 possible matches among all datasets. Therefore, by choosing pattern 3 as a start, we ensure that the time does not change as the size of pattern 1 changes. 
+\item[q9:] It is like q8, but the sizes of the first three patterns increase by ~12x from the smallest dataset to the largest. Therefore, even if we pick the smallest parttern to start with, the time will still increase. 
 \item[q10:] Same as q1 and q3. 
 \item[q11:] Like q10, the performance of q1, q3, q10, and q11 are good because they choose the pattern with the smallest size to start.
 \item[q12:] It is almost like q11. It first finds the smallest of the form $\langle X, p, o\rangle$ and matches $\langle X, p, Y\rangle$. Then all others are just $\langle s, p, o\rangle$ and can be verified very quickly. 
-\item[q13:]  The plan first takes $\langle X, p, o\rangle$ and then $\langle s, p, X\rangle$. There are 8330 choices for the first pattern but just one for the second. If we do the second one first, it will be quick, but the selectivity is more important than the actual size by the heuristic assumption in the paper. But since we do have the size of $I_{sp}[t]$ and $I_{op}[t]$, we could relax the assumption a little bit by setting the selectivity of $\langle X, p, o\rangle = \langle s, p, X\rangle$ and comparing the size for these two. This can achieve a great improvement without introducing additional costs, but I did not implement this as I need to rewrite the most of report just for this.
+\item[q13:] There are 8330 choices for the first pattern but just one for the second. If we do it in order, it will be slow. However, the plan first takes $\langle s, p, X\rangle$ and then $\langle X, p, o\rangle$ because they have the same selectivity but different in sizes.
 \item[q14:] Same as q6. The running time increases as the size increases. 
 \end{enumerate}
 \end{enumerate}

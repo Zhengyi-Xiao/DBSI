@@ -13,7 +13,7 @@
 #define XPX 7
 #define SXX 6
 #define XXO 5
-#define SPX 4
+#define SPX 3
 #define XPO 3
 #define SXO 2
 #define SPO 1
