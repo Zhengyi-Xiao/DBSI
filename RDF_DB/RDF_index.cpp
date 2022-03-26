@@ -173,7 +173,7 @@ inline void RDF_index::evaluate_XPO(struct Triple t, struct Triple& result, int&
 
 inline void RDF_index::evaluate_SPO(struct Triple t, struct Triple& result, int& index){
     if((*this->Ispo)[t].idx != 0){
-        COPY_TRIPLE(result, t);
+        result = t;
         index = EndOfNode;
     }
     else{

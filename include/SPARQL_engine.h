@@ -16,7 +16,7 @@ private:
 public:
     SPARQL_engine();
     void join(Query_parser* query);
-    void join_helper(std::unordered_map<int, int>& sigma, int i);
+    void join_helper(std::vector<int>& sigma, int i);
 
 };
 
