@@ -1,0 +1,6 @@
+<Stewie> <loves> <Stewie> .
+<Stewie> <loves> <Brian> .
+<Brian> <loves> <Lois> .
+<Peter> <hasAge> "42" .
+<Lois> <hasAge> "42" .
+<Brian> <hasAge> "10" .

@@ -3,7 +3,6 @@
 
 std::vector<std::string> split(std::string s){
     std::vector<std::string> result;
-
     size_t pos = 0;
     std::string token;
     while ((pos = s.find(" ")) != std::string::npos) {
@@ -25,7 +24,7 @@ int main() {
 
     while(std::getline(std::cin, input)){ 
         if(input == ""){
-            std::cout << ">";
+            std::cout << "> ";
             continue;
         }
         token_input = split(input);

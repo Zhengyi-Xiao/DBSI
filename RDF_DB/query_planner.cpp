@@ -23,12 +23,12 @@ void Query_planner::plan_query(std::vector<struct Triple>& U, std::vector<struct
                     t_best = t; score_best = score;
             }       
             */
-            if(t_best.s == -1 && t_best.p == -1 && t_best.o == -1){
+            if(t_best.s == -1 && t_best.p == -1 && t_best.o == -1){ // we take the first triple pattern regardless of what
                 intersected = !v_intersection.empty();
                 t_best = t; score_best = score;
             }
             if(score == score_best){
-                if(t.s < 0){
+                if(t.s < 0){ // if they are in pattern <X, p, o> or <s, p, X>, it is a special case we need to handle as I stated in the report
                     if((t_best.s < 0 && (*this->Turtle_handler->table->Iop)[{0, t.p, t.o}].size < (*this->Turtle_handler->table->Iop)[{0, t_best.p, t_best.o}].size) ||
                        (t_best.o < 0 && (*this->Turtle_handler->table->Iop)[{0, t.p, t.o}].size < (*this->Turtle_handler->table->Isp)[{t_best.s, t_best.p, 0}].size)){
                         t_best = t; score_best = score;
@@ -46,7 +46,7 @@ void Query_planner::plan_query(std::vector<struct Triple>& U, std::vector<struct
                     t_best = t; score_best = score;
                 }
             }
-            else{
+            else{ // we always want an intersection
                 if((variables.empty() || !v_intersection.empty())){
                     t_best = t; score_best = score; intersected = true;
                 }                
@@ -60,7 +60,7 @@ void Query_planner::plan_query(std::vector<struct Triple>& U, std::vector<struct
     
 }
 
-// (s, p, o) ≺ (s, ?, o) ≺ (?, p, o) ≺ (s, p, ?) ≺ (?, ?, o) ≺ (s, ?, ?) ≺ (?, p, ?) ≺ (?, ?, ?)
+// (s, p, o) ≺ (s, ?, o) ≺ (?, p, o) = (s, p, ?) ≺ (?, ?, o) ≺ (s, ?, ?) ≺ (?, p, ?) ≺ (?, ?, ?)
 int Query_planner::get_score(struct Triple t, const std::vector<int> B){
     // the variables in B are considered bound for the given triple t.
     if (std::count(B.begin(), B.end(), t.s))
