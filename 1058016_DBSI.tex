@@ -64,13 +64,13 @@ Your degree: MSc Advanced Computer Science
 	\item 
 	\begin{enumerate}
 	\item 
-	The data structure in this paper is a six-column triple table. The subject, predicate, and object of a triple are encoded as integers in the first three columns, $R_s$, $R_p$, and $R_o$, respectively. Conceptually, there are three linked lists, an $sp$-list that connects all triples with the same $R_s$ grouped by $R_p$, an $op$-list that associates all triple with the same $R_o$ grouped by $R_p$, and a $p$-list that relates all triples with the same $R_p$ without any grouping. In the table, the last three columns, $N_{sp}$, $N_{op}$, and $N_p$, store the next-pointes, which are going to be the row number in the triple table in the actual implementation.
+	The data structure in this paper is a six-column triple table. The subject, predicate, and object of a triple are encoded as integers in the first three columns, $R_s$, $R_p$, and $R_o$, respectively. Conceptually, there are three linked lists, an $sp$-list that connects all triples with the same $R_s$ grouped by $R_p$, an $op$-list that associates all triple with the same $R_o$ grouped by $R_p$, and a $p$-list that relates all triples with the same $R_p$ without any grouping. In the table, the last three columns, $N_{sp}$, $N_{op}$, and $N_p$, store the next-pointes, which are going to be the row numbers in the triple table in the actual implementation.
 	
 	Apart from the table, six index maps are also maintained. $I_s$, $I_p$, and $I_o$ store the head of the $sp$-list, $p$-list, and $op$-list, respectively. $I_{sp}$ maps $s$ and $p$ to the first occurrence of the triple with the same $s$ and $p$ in the $sp$-list. So does $I_{op}$. $I_{spo}$ stores the row number of each triple in the table. 
 	
 	\item {\large A}DD(Triple $t$) consists of two parts; first, append a new row to the end of the RDF-index table, and second, associates the new row with all six index maps and alters the pointer columns, $N_{sp}$, $N_{op}$, and $N_p$, to point to the correct row.
 	
-	Since there is no need to worry about the concurrency in our setting, the RDF-index table is maintained as a fixed size vector of int list of size 6 with each position stands for different columns. Therefore, for each time we add a triple into the table, we simply append it to the last. However, if the triple is already in the $I_{spo}$ map, we skip it. When the size reaches its limit, the entire table will resize. 
+	Since there is no need to worry about the concurrency in our setting, the RDF-index table is maintained as a fixed size vector of int list of size 6 with each position stands for different columns. Therefore, for each time we add a triple into the table, we simply append it to the last. However, if a triple is already in the $I_{spo}$ map, we skip it. When the size reaches its limit, the entire table will resize. 
 
 \begin{algorithm}[H]
 \caption{ADD (t)}\label{alg:cap}
@@ -92,7 +92,7 @@ Your degree: MSc Advanced Computer Science
 \end{algorithmic}
 \end{algorithm}
 
-The columns, $N_{sp}$, $N_{op}$, and $N_p$, are maintained in a linked-list-like manner and are updated simultaneously with the index maps. Take $N_{op}$ for example, if $T_{new}$ does not appear in the $I_o$ and $I_{op}$, it means that  $T_{new}$ is a triple with a brand new $T_{new}.s$ and $T_{new}.p$. Therefore, we insert $T_{new}$ into the index map $I_o$ and $I_{op}$ (case1). If we found a $T$ with $T.o = T_{new}.o$ and $T.p = T_{new}.p$, then we insert $T_{new}$ after $T$, and point the next of $T_{new}$ to the original next of the $T$ (case3). A special case is that when there is no next for $T$ and it is handled in case 2 of the Algorithm \eqref{alg:updateIop}. The case of $N_{sp}$ and $N_p$ is similar.
+The columns, $N_{sp}$, $N_{op}$, and $N_p$, are maintained in a linked-list-like manner and are updated simultaneously with the index maps. Take $N_{op}$ for example, if a new triple, $T_{new}$, does not appear in the $I_o$ and $I_{op}$, it means that  $T_{new}$ is a triple with a brand new $T_{new}.s$ and $T_{new}.p$. Therefore, we insert $T_{new}$ into the index map $I_o$ and $I_{op}$ (case1). If we found a $T$ with $T.o = T_{new}.o$ and $T.p = T_{new}.p$, then we insert $T_{new}$ after $T$, and point the next of $T_{new}$ to the original next of the $T$ (case3). A special case is that when there is no next for $T$ and it is handled in case 2 of the Algorithm \eqref{alg:updateIop}. The case of $N_{sp}$ and $N_p$ is similar.
 
 \begin{algorithm}[H]
 \caption{Update $I_{op}$($T_{new}$)}\label{alg:updateIop}
@@ -118,7 +118,7 @@ The columns, $N_{sp}$, $N_{op}$, and $N_p$, are maintained in a linked-list-like
 \item 
 
  
-Let $t = \langle s, p, o\rangle$ be a triple pattern and $X$, $Y$, and $Z$ be free variables. There are two inputs for EVALUATE; $t$, the matching pattern, and \textit{index}, the previous state. There are also two outputs, $t'$, the answer to the match pattern, \textit{index}, the current state. The index are usually the pointer to the next triple, but there are two sentinels; \textit{EndOfNode} will tell the caller there is no more next triple to search and \textit{EndSearch} stands for an illegal search. The general framework is shown in Algorithm \eqref{alg:evaluate}.
+Let $t = \langle s, p, o\rangle$ be a triple pattern and $X$, $Y$, and $Z$ be free variables. There are two inputs for EVALUATE; $t$, the matching pattern, and \textit{index}, the previous row number. There are also two outputs, $t'$, the answer to the match pattern, \textit{index}, the current row number. The index are usually the pointer (row number) to the next triple, but there are two sentinels; \textit{EndOfNode} will tell the caller there is no more next triple to search and \textit{EndSearch} stands for an illegal search. The general framework is shown in Algorithm \eqref{alg:evaluate}.
 
 \begin{algorithm}[H]
 \caption{Framework}\label{alg:evaluate}
@@ -147,7 +147,7 @@ When there is not a free variable, EVALUATE will check if $t$ is in $I_{spo}$ ma
 \end{algorithmic}
 \end{algorithm}
 
-When there is one free variable, there are three cases: $\langle X, p, o\rangle$, $\langle s, X, o\rangle$, and $\langle s, p, X\rangle$. The first and the last cases are similar. For $\langle X, p, o\rangle$, in the first search, we use the index map, $I_{op}$, to locate the head of the triple with predicate and object the same as $o$ and $p$, then we return the first match and the next pointer at $N_{op}$. For all subsequent evaluate, we traverse $N_{op}$ list until there is no match. The pseudo-code is suggested in Algorithm \eqref{alg:evaluateXPO}.
+When there is one free variable, there are three cases: $\langle X, p, o\rangle$, $\langle s, X, o\rangle$, and $\langle s, p, X\rangle$. The first and the last cases are similar. For $\langle X, p, o\rangle$, in the first search, we use the index map, $I_{op}$, to locate the head of the triple with predicate and object the same as $o$ and $p$, then we return the first match and the next pointer at $N_{op}$. For all subsequent evaluates, we traverse $N_{op}$ list until there is not a match. The pseudo-code is suggested in Algorithm \eqref{alg:evaluateXPO}. $\langle s, p, X\rangle$ is similar. 
  
 \begin{algorithm}[H]
 \caption{Evaluate $\langle X, p, o\rangle$}\label{alg:evaluateXPO}
@@ -167,7 +167,7 @@ When there is one free variable, there are three cases: $\langle X, p, o\rangle$
 \end{algorithmic}
 \end{algorithm}
 
-$\langle s, p, X\rangle$ is similar. Since we don't have index on $s$ and $o$,  $\langle s, X, o\rangle$ needs some extra works. To match this pattern, we can traverse either $sp$-list or $op$-list and skip the triples does not match on $s$ and $o$. The choose of the list depends on the size of $I_s[s]$ and $I_o[o]$ and we use the smaller one. The pseudo-code is in Algorithm \eqref{alg:evaluateSXO}.
+Since we don't have an index on $s$ and $o$,  $\langle s, X, o\rangle$ needs some extra works. To match this pattern, we can traverse either $sp$-list or $op$-list and skip the triples does not match on $s$ and $o$. The choose of the list depends on the size of $I_s[s]$ and $I_o[o]$ and we use the smaller one. The pseudo-code is in Algorithm \eqref{alg:evaluateSXO}.
 
 \begin{algorithm}[H]
 \caption{Evaluate $\langle s, X, o\rangle$}\label{alg:evaluateSXO}
@@ -197,7 +197,7 @@ $\langle s, p, X\rangle$ is similar. Since we don't have index on $s$ and $o$,  
 \end{algorithm}
 
 
-When there are two free variables, there are also three cases: $\langle X, Y, o\rangle$, $\langle X, p, Z\rangle$, and $\langle s, Y, Z\rangle$, where $X$, $Y$, and $Z$ can be equal. Their idea is similar; $\langle X, Y, o\rangle$, for example, we first find $I_o[t.o]$ and traverse the $op$-list till the end. If $X=Y$, then we skip those triples with $p \neq o$. The pseudo-code is given in Algorithm \eqref{alg:evaluateXYO}\footnote{Even I found myself a little confused by what I wrote in the do-while loop, so this footnote might be helpful. After a few minutes of thinking, I found only when we want $X=Y$, the condition $t'.p \neq t'.s$ will make the loop start and try to locate the one with $t.p = t.s$. If $X\neq Y$, the loop will never start and return immediately.}.
+When there are two free variables, there are also three cases: $\langle X, Y, o\rangle$, $\langle X, p, Z\rangle$, and $\langle s, Y, Z\rangle$, where $X$, $Y$, and $Z$ can be equal. Their ideas are similar; $\langle X, Y, o\rangle$, for example, we first find $I_o[t.o]$ and traverse the $op$-list till the end. If $X=Y$, then we skip those triples with $p \neq o$. The pseudo-code is given in Algorithm \eqref{alg:evaluateXYO}\footnote{Even I found myself a little confused by what I wrote in the do-while loop, so this footnote might be helpful. After a few minutes of thinking, I found only when we want $X=Y$, the condition $t'.p \neq t'.s$ will make the loop start and try to locate the one with $t.p = t.s$. If $X\neq Y$, the loop will never start and return immediately.}.
 
 \begin{algorithm}[H]
 \caption{Evaluate $\langle X, Y, o\rangle$}\label{alg:evaluateXYO}
@@ -215,9 +215,9 @@ When there are two free variables, there are also three cases: $\langle X, Y, o\
 \EndIf
 \end{algorithmic}
 \end{algorithm}
-The idea for the other two patterns is similar; starts from $I_p$ or $I_s$ map and traverse the $p$-list or $sp$-list.
+The ideas for the other two patterns are similar; start from $I_p$ or $I_s$ map and traverse the $p$-list or $sp$-list.
 
-When there are three free variables, the paper suggests to match, for example, the patterns like $\langle X, Y, Z\rangle$, we need to iterate over the triple table; if we want $X = Y$,  we skip those $X\neq Y$. However, this is not efficient. Therefore, I modified a little bit and the idea and pseudo-code are discussed in 2.a, where I put everything that is different from paper there. 
+When there are three free variables, the paper suggests to match, for example, the patterns like $\langle X, Y, Z\rangle$, we need to iterate over the triple table; if we want $X = Y$,  we skip those $X\neq Y$. However, this is not efficient. Therefore, I modified a little bit and the idea and pseudo-code are discussed in 2.a, where I put everything that is different from the paper there. 
 
 \end{enumerate}
 \item 
@@ -226,7 +226,7 @@ When there are three free variables, the paper suggests to match, for example, t
 
 This component is included in RDF\_index.cpp, in which ADD and EVALUATE are implemented as suggested in the problem 1. There are a few things that is slightly different from the paper. 
 
-1) I used XXHASH\footnote{https://cyan4973.github.io/xxHash/} by Facebook instead of Jenkings hashing, because it achieves state-of-the-art excellent performance on both long and small inputs and it is true. Jenkings hashing is implemented in RDF\_index.h and is commented. I did some tests and observed that Jenkings is about 4\% slower than XXHASH in average\footnote{For loading, XXHASH and Jenkings took 314.359, 4026.82, and 323.914, 4206.85, and 58582.4 ms on three datasets, respectively, achieving 2\%, 4\%, and 8\% speed up on each.}. 
+1) I used XXHASH\footnote{https://cyan4973.github.io/xxHash/} by Facebook instead of Jenkings hashing, because it achieves state-of-the-art excellent performance on both long and small inputs. Jenkings hashing is implemented in RDF\_index.h and but it is commented. I did some tests and observed that Jenkings is about 4\% slower than XXHASH in average\footnote{For loading, XXHASH and Jenkings took 314.359, 4026.82, and 323.914, 4206.85, and 58582.4 ms on three datasets, respectively, achieving 2\%, 4\%, and 8\% speed up on each.}. 
 
 2) Instead of open addressing, I eventually choose std::unordered\_map for index maps $I_{sp}$, $I_{op}$ and $I_{spo}$. I had an open addressing hash implemented in HashTable.cpp and HashTable.h (attached in the submission), but it was much slower than the unordered\_map by about 20\% or more.
 
@@ -261,9 +261,7 @@ This part is in the file SPARQL\_engine.cpp and it is implemented strictly based
 
 \item The greedy join order optimization query planner.
 
-This part can be sought in the file query\_planner.cpp. I see what the model answer is trying to say, but I believe there are some minor mistakes, so I made some slight changes, but it is still $O(n^2)$, where $n$ is the number of triple patterns we try to fit. 
-
-There were four things I modified. 
+This part can be sought in the file query\_planner.cpp. I see what the model answer is trying to say, but I believe there are some minor mistakes, so I made some slight changes, but it is still $O(n^2)$, where $n$ is the number of triple patterns we try to fit. There were four things I modified. 
 
 Firstly, the last three lines should go to the outside while loop. 
 
@@ -280,7 +278,7 @@ It is troublesome because it will always take the first unprocessed triple patte
 	\langle Y &,\quad 2,\quad 3\rangle\\
 	\langle X &,\quad 4,\quad Y\rangle
 \end{align*}
-will produce the plan $\langle X, 1, 2\rangle \mapsto \langle Y, 2, 3\rangle \mapsto \langle X, 4, Y\rangle$ because even after we replace the $X$ in $\langle X, 4, Y\rangle$, this triple pattern still has higher selectivity than $\langle Y, 2, 3\rangle$. Therefore, this plan will create an unnecessary cross product, and I believe the criteria \eqref{criteria} meant choosing the triple pattern that has the lowest selectivity and includes some variables that are in the processed patterns. Thus, I made some modifications to the algorithm, and it will 1) as long as an unprocessed pattern has a variable that is processed, we will always consider this pattern and 2) if this pattern has lower selectivity than the previous one, we choose this pattern as the best triple. With this modification, the plan becomes $\langle X, 1, 2\rangle \mapsto \langle X, 4, Y\rangle \mapsto \langle Y, 2, 3\rangle$. 
+will produce the plan $\langle X, 1, 2\rangle \mapsto \langle Y, 2, 3\rangle \mapsto \langle X, 4, Y\rangle$ because even after we replace the $X$ in $\langle X, 4, Y\rangle$, this triple pattern still has a higher selectivity than $\langle Y, 2, 3\rangle$. Therefore, this plan will create an unnecessary cross product, and I believe the criteria \eqref{criteria} meant choosing the triple pattern that has the lowest selectivity and includes some variables that are in the processed patterns. Thus, I made some modifications to the algorithm, and it will 1) as long as an unprocessed pattern has a variable that is processed, we will always consider this pattern and 2) if this pattern has lower selectivity than the previous one, we choose this pattern as the best triple. With this modification, the plan becomes $\langle X, 1, 2\rangle \mapsto \langle X, 4, Y\rangle \mapsto \langle Y, 2, 3\rangle$. 
 
 Thirdly, there are some cases that $|\langle X, 1, 2\rangle| = 10,000$ but $|\langle Y, 2, 3\rangle| = 10$. If we ignore the size of the pattern, we might produce a lot of unnecessary joins, but we can store this information while we are updating $I_{op}$. Therefore, I also record the size of $I_{op}[op]$ and $I_{sp}[sp]$, and we choose the best triple pattern based on both selectivity and size. Our final query plan is $\langle Y, 2, 3\rangle \mapsto \langle X, 4, Y\rangle \mapsto \langle X, 1, 2\rangle$, which is the most optimal plan. Notice that only $I_{op}$ and $I_{sp}$ are considered because they are the most common cases, and recording the size of other index maps would produce overhead in indexing. Since the size of $I_{op}[t]$ and $I_{sp}[t]$ can be recored while we are inserting triple, the cost of maintaining the size is negligible\footnote{There are many tricks to save memory. For example, let's say $I_{sp}$ is an unordered\_map$<$int, int$>$, where the first int is the hash key and the second int is the index of row number. For a table size smaller than $2^{24}$ rows, we can use the higher $7$ bits to store the size and lower 24 bits to store the index. Other trick might apply also.}. 
 
@@ -326,7 +324,7 @@ The pseudo-code goes as the following.
 \State $t_{best} \leftarrow t$, $score_{best} \leftarrow score$
 \EndIf
 \Else
-\If{$var(t) = \emptyset$ or $var(t) \cap B \neq \emptyset$} \Comment{Make sure that the next pattern share some variables.}
+\If{$var(t) = \emptyset$ or $var(t) \cap B \neq \emptyset$} \Comment{make sure that the next pattern share some variables.}
 \State $t_{best} \leftarrow t$, $score_{best} \leftarrow score$, intersected $\leftarrow$ true
 \EndIf
 \EndIf
@@ -338,28 +336,28 @@ The pseudo-code goes as the following.
 \end{algorithm}
 
 
-From Table 1, we see a significant improvement in most of the queries. The testing protocol is the same as the one in question 3. To do the test, uncomment lines 20-25 in query\_planner.cpp and comment lines 26-45 and MAKE TEST. The analysis is included in 3.c.
+From Table 1, we see a significant improvement in most of the queries. The testing protocol is the same as the one in question 3. To do the test, uncomment lines 20-25 in query\_planner.cpp and comment lines 26-53 and MAKE TEST. The analysis of the result is included in 3.c.
 
 \begin{table}[]\centering
 \begin{tabular}{|l|l|l|l|}
 \hline
     & Model Answer (ms) & New Query Plan (ms) & Improvement (\%) \\ \hline
-q1  & 1.0781            & 0.0137              & 78.6934307       \\ \hline
-q2  & 1132.55           & 4.495               & 251.957731       \\ \hline
-q3  & 3.3425            & 0.0166              & 201.355422       \\ \hline
-q4  & 0.3796            & 0.1035              & 3.66763285       \\ \hline
-q5  & 5.1757            & 0.4164              & 12.429635        \\ \hline
-q6  & 1.3064            & 0.965               & 1.35378238       \\ \hline
-q7  & 7093.21           & 0.5548              & 12785.1658       \\ \hline
-q8  & 70.2673           & 8.4899              & 8.2765757        \\ \hline
-q9  & 3783.54           & 7.3296              & 516.200065       \\ \hline
-q10 & 5.0822            & 0.011               & 462.018182       \\ \hline
-q11 & 0.2163            & 0.1319              & 1.6398787        \\ \hline
-q12 & 0.1445            & 0.0394              & 3.66751269       \\ \hline
-q13 & 3.828             & 0.0075              & 510.4       \\ \hline
-q14 & 0.9798            & 0.8059              & 1.2157836        \\ \hline
+q1  & 1.0781            & 0.0137              & 7869.34307       \\ \hline
+q2  & 1132.55           & 4.495               & 25195.7731       \\ \hline
+q3  & 3.3425            & 0.0166              & 20135.5422       \\ \hline
+q4  & 0.3796            & 0.1035              & 366.763285       \\ \hline
+q5  & 5.1757            & 0.4164              & 1242.9635        \\ \hline
+q6  & 1.3064            & 0.965               & 135.378238       \\ \hline
+q7  & 7093.21           & 0.5548              & 1278516.58       \\ \hline
+q8  & 70.2673           & 8.4899              & 827.65757        \\ \hline
+q9  & 3783.54           & 7.3296              & 51620.0065       \\ \hline
+q10 & 5.0822            & 0.011               & 46201.8182       \\ \hline
+q11 & 0.2163            & 0.1319              & 163.98787        \\ \hline
+q12 & 0.1445            & 0.0394              & 366.751269       \\ \hline
+q13 & 3.828             & 0.0075              & 51040       \\ \hline
+q14 & 0.9798            & 0.8059              & 121.57836        \\ \hline
 \end{tabular}
-\caption{Time took to process and evaluate the query by the model answer and the new query plan in ms on the data set LUBM-001-mat.ttl. The new plan achieves more than 1000\% speed up in average on the 14 queries.}
+\caption{Time took to process and evaluate the query by the model answer and the new query plan in ms on the data set LUBM-001-mat.ttl. The new plan achieves more than 100,000\% speed up in average on the 14 queries.}
 \end{table}
 
 \item The component for parsing and importing Turtle files.
@@ -375,12 +373,10 @@ This part is included in query\_parser.cpp.
 This part is included in interface.cpp.
 
 \end{enumerate}
-
+\newpage
 \item[3.a]
 \begin{enumerate}
-\item 
-
-Hardware and Software Configuration:
+\item Hardware and Software Configuration:
 
 \begin{enumerate}
 \item Model Identifier:	MacBookPro14,3
