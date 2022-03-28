@@ -14,14 +14,11 @@ void Interface::LOAD(std::vector<std::string> token_input){
     }
     else{ // time counts start from loading to the end of load
         this->begin = std::chrono::high_resolution_clock::now();
-        if(this->ttl->load(token_input[1]) == SUCCES){
-            this->end = std::chrono::high_resolution_clock::now();
-            std::cout << this->ttl->table->size_of_table() - this->current_loaded_data << " triples loaded in " << ((float)std::chrono::duration_cast<std::chrono::microseconds>(this->end - this->begin).count()/(float)1000) << " ms." << std::endl;
-            this->current_loaded_data += (this->ttl->table->size_of_table() - this->current_loaded_data);
-        }
-        else{
-            std::cout << "Open the file, " << token_input[1] << ", failed." << std::endl;
-        }
+        if(this->ttl->load(token_input[1]) != SUCCES)
+            std::cout << "Error in processing the file, " << token_input[1] << ", failed." << std::endl;
+        this->end = std::chrono::high_resolution_clock::now();
+        std::cout << this->ttl->table->size_of_table() - this->current_loaded_data << " triples loaded in " << ((float)std::chrono::duration_cast<std::chrono::microseconds>(this->end - this->begin).count()/(float)1000) << " ms." << std::endl;
+        this->current_loaded_data += (this->ttl->table->size_of_table() - this->current_loaded_data);
     }
 }
 
