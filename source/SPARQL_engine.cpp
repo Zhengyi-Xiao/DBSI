@@ -18,8 +18,8 @@ void SPARQL_engine::join(Query_parser* query){
     }
 
     std::vector<int> sigma; 
-    sigma.resize(this->query->num_Vs << 1);
-    
+    sigma.resize(this->query->num_Vs << 2);
+
     join_helper(sigma, 1);
 }
 
