@@ -28,11 +28,11 @@ void SPARQL_engine::join_helper(std::vector<int> & sigma, int i){
     if(i >= this->query->num_Tps + 1){
         if(this->query->output){ // print output
             for(auto kv : *this->query->Voutput){
-                std::string output = this->query->Turtle_handler->idx2IRI->at(sigma[-kv.second]);
+                std::string output = this->query->turtle_handler->idx2IRI->at(sigma[-kv.second]);
                 if(output.size() > 5 and output.substr(0,4) == "http") // to see if it is a IRI
-                    std::cout << "<" << this->query->Turtle_handler->idx2IRI->at(sigma[-kv.second]) << ">    ";
+                    std::cout << "<" << this->query->turtle_handler->idx2IRI->at(sigma[-kv.second]) << ">    ";
                 else
-                    std::cout << "\"" << this->query->Turtle_handler->idx2IRI->at(sigma[-kv.second]) << "\"    ";
+                    std::cout << "\"" << this->query->turtle_handler->idx2IRI->at(sigma[-kv.second]) << "\"    ";
             }
             std::cout << std::endl;
         }
@@ -50,7 +50,7 @@ void SPARQL_engine::join_helper(std::vector<int> & sigma, int i){
             if(question.o < 0 && sigma[-question.o] > 0) question.o = sigma[-question.o];
 
             // evaluate
-            this->query->Turtle_handler->table->evaluate(question, result, index, sub_index);
+            this->query->turtle_handler->table->evaluate(question, result, index, sub_index);
             
             // as long as it is not an illegal search, we keep doing this.
             if(index >= EndOfNode){ 

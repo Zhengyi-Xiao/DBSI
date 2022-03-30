@@ -1,8 +1,8 @@
 #include "../include/query_parser.h"
 
 
-Query_parser::Query_parser(class Turtle_handler* Turtle_handler){
-    this->Turtle_handler = Turtle_handler;
+Query_parser::Query_parser(class Turtle_handler* turtle_handler){
+    this->turtle_handler = turtle_handler;
     this->output = true;
 }
 
@@ -65,11 +65,11 @@ int Query_parser::process(std::string query){
             while(end < len){
                 if(query[end] == '>'){
                     std::string token = query.substr(begin+1, end - begin - 1);
-                    if(this->Turtle_handler->IRI2idx->find(token) == this->Turtle_handler->IRI2idx->end()){
+                    if(this->turtle_handler->IRI2idx->find(token) == this->turtle_handler->IRI2idx->end()){
                         std::cout << token << " is not presented in the table." << std::endl;
                         return FAIL;
                     }
-                    triple.push_back(this->Turtle_handler->IRI2idx->at(token));
+                    triple.push_back(this->turtle_handler->IRI2idx->at(token));
                     break;
                 }
                 ++end;
@@ -83,11 +83,11 @@ int Query_parser::process(std::string query){
             while(end < len){
                 if(query[end] == '\"'){
                     std::string token = query.substr(begin+1, end - begin - 1);
-                    if(this->Turtle_handler->IRI2idx->find(token) == this->Turtle_handler->IRI2idx->end()){
+                    if(this->turtle_handler->IRI2idx->find(token) == this->turtle_handler->IRI2idx->end()){
                         std::cout << token << " is not presented in the table." << std::endl;
                         return FAIL;
                     }
-                    triple.push_back(this->Turtle_handler->IRI2idx->at(token));
+                    triple.push_back(this->turtle_handler->IRI2idx->at(token));
                     break;
                 }
                 ++end;

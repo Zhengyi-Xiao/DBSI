@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -Wall
+CFLAGS = -w
 DEBUG = -DDEBUG -g
 VERSION = -std=c++11
 OPT = -O3

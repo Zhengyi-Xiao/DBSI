@@ -14,7 +14,7 @@
 class Query_parser{
 
 public:
-    Query_parser(Turtle_handler* Turtle_handler);
+    Query_parser(Turtle_handler* turtle_handler);
     int process(std::string query);
     void set_output(bool output);
 
@@ -22,7 +22,7 @@ public:
     std::vector<struct Triple>* Tps;
 
     int num_Vs, num_Tps;
-    Turtle_handler* Turtle_handler;
+    Turtle_handler* turtle_handler;
 
     int result_size;
     bool output;
