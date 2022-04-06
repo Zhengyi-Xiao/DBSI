@@ -92,7 +92,7 @@ Your degree: MSc Advanced Computer Science
 \end{algorithmic}
 \end{algorithm}
 
-The columns, $N_{sp}$, $N_{op}$, and $N_p$, are maintained in a linked-list-like manner and are updated simultaneously with the index maps. Take $N_{op}$ for example, if a new triple, $T_{new}$, does not appear in the $I_o$ and $I_{op}$, it means that  $T_{new}$ is a triple with a brand new $T_{new}.s$ and $T_{new}.p$. Therefore, we insert $T_{new}$ into the index map $I_o$ and $I_{op}$ (case1). If we found a $T$ with $T.o = T_{new}.o$ and $T.p = T_{new}.p$, then we insert $T_{new}$ after $T$, and point the next of $T_{new}$ to the original next of the $T$ (case3). A special case is that when there is no next for $T$ and it is handled in case 2 of the Algorithm \eqref{alg:updateIop}. The case of $N_{sp}$ and $N_p$ is similar.
+The columns, $N_{sp}$, $N_{op}$, and $N_p$, are maintained in a linked-list-like manner and are updated simultaneously with the index maps. Take $N_{op}$ for example, if a new triple, $T_{new}$, does not appear in the $I_o$ and $I_{op}$, it means that  $T_{new}$ is a triple with a brand new $T_{new}.s$ and $T_{new}.p$. Therefore, we insert $T_{new}$ into the index map $I_o$ and $I_{op}$ (case1). If we found a $T$ with $T.o = T_{new}.o$ and $T.p = T_{new}.p$, then we insert $T_{new}$ after $T$, and point the next of $T_{new}$ to the original next of the $T$ (case2). A special case is that when there is not a head of $I_{op}$ for $T$, we will make $T$ the haed of $I_{o}$ and $T.N_{op}$ point to the original start of $I_{op}$ and $I_o$, which  is handled in case 3 of the Algorithm \eqref{alg:updateIop}. The case of $N_{sp}$ and $N_p$ is similar.
 
 \begin{algorithm}[H]
 \caption{Update $I_{op}$($T_{new}$)}\label{alg:updateIop}
@@ -102,14 +102,13 @@ The columns, $N_{sp}$, $N_{op}$, and $N_p$, are maintained in a linked-list-like
 \State make $T_{new}$ the head of $I_o$ and $I_{op}$ 
 \EndIf
 
-\If{$T$ does not have $T_{next}$}\Comment{Case 2}
-\State make $T_{new}$ the head of $I_o$ and $I_{op}$
-\State $T_{new}.N_{op} = T$
-\EndIf
-
-\If{$T$ has $T_{next}$} \Comment{Case 3}
-\State $T_{next} = T.N_{op}$
+\If{$I_{op}$ has $T$}\Comment{Case 2}
 \State $T_{new}.N_{op} = T_{next}$
+\State $T.N_{op} = T_{new}$
+\ElsIf{$I_{op}$ does not have $T$} \Comment{Case 3}
+\State make $T_{new}$ the head of $I_{op}$ 
+\State $T_{new}.N_{op} = I_o$.head
+\State make $T_{new}$ the head of $I_{o}$ 
 \EndIf
 
 \end{algorithmic}
@@ -399,7 +398,7 @@ This part is included in interface.cpp.
 
 \item 
 
-We set a timeout if one instruction takes more than 3 minutes. The following protocol can be found in protocol.cpp. If you want to run the load test, fill in the correct path to the data and uncomment some lines. It will take about 15 minutes to run. 
+We set a timeout if one instruction takes more than 3 minutes. The following protocol can be found in experiment.cpp. If you want to run the load test, fill in the correct path to the data and uncomment line 102. It will take about 10 minutes to run. 
 
 Loading Data Test Protocol:
 
@@ -437,7 +436,7 @@ To avoid the cache effect, I run 14 queries one by one for 10 times instead of r
 
 \end{enumerate}
 
-\item[3.b] The time needed to load and index the data and the time needed to produce all query answers for each RDF graph and query are showed in Table 2 and Table 3, respectively.
+\item[3.b] The time needed to load and index the data and the time needed to produce all query answers for each RDF graph and query are showed in Table 2 and Table 3, respectively\footnote{Since I brought a new Mac while I was working on this, I attached the results from my old Mac and the school server in Appendix 1 and 2. I was astonished by my new Mac.}.
 
 \begin{table}[H]\centering
 \begin{tabular}{|l|l|l|l|}
@@ -491,9 +490,129 @@ q14 & 0.1947            & 8.8916            & 272.475           \\ \hline
 \end{enumerate}
 \end{enumerate}
 
+\newpage
+
+\section*{Appendix 1: result from my old Mac}
+\begin{enumerate}
+	\item Hardware and Software Configuration:
+
+\begin{enumerate}
+\item Model Identifier:	MacBookPro14,3
+
+\item Processor Name:	Quad-Core Intel Core i7
+
+\item Processor Speed:	2.9 GHz
+
+\item Number of Processors:	1
+
+\item Total Number of Cores:	4
+
+\item L2 Cache (per Core):	256 KB
+
+\item L3 Cache:	8 MB
+
+\item Memory:	16 GB
+
+\item Operating System: macOS Big Surf, Version 11.6 (20G165)
+
+\item Compiler Version: Apple clang version 11.0.0 (clang-1100.0.33.8)
+
+\end{enumerate}
+
+\begin{table}[H]\centering
+\begin{tabular}{|l|l|l|l|}
+\hline
+                   & LUBM-001-mat (ms) & LUBM-010-mat (ms) & LUBM-100-mat (ms)\\ \hline
+Load \& Index Time & 314.359         & 4026.82        & 53525.3        \\ \hline
+\end{tabular}
+\caption{Time needed to load and index the data in ms.}
+\end{table}
 
 
+\begin{table}[H]\centering
+\begin{tabular}{|l|l|l|l|}
+\hline
+    & LUBM-001-mat (ms) & LUBM-010-mat (ms) & LUBM-100-mat (ms) \\ \hline
+q1  & 0.0152            & 0.0143            & 0.0248            \\ \hline
+q2  & 4.4338            & 72.8246           & 708.436           \\ \hline
+q3  & 0.0162            & 0.0239            & 0.0274            \\ \hline
+q4  & 0.1119            & 0.1494            & 0.1827            \\ \hline
+q5  & 0.3815            & 0.5832            & 0.7189            \\ \hline
+q6  & 0.974             & 19.8416           & 186.464           \\ \hline
+q7  & 0.0674            & 0.0898            & 0.1306            \\ \hline
+q8  & 8.3644            & 11.2896           & 14.8031           \\ \hline
+q9  & 6.1915            & 100.174           & 1376.28           \\ \hline
+q10 & 0.0106            & 0.0202            & 0.0278            \\ \hline
+q11 & 0.1376            & 0.2023            & 0.2621            \\ \hline
+q12 & 0.0409            & 0.4233            & 0.5893            \\ \hline
+q13 & 0.0075            & 0.0388            & 0.5113            \\ \hline
+q14 & 0.7846            & 15.3656           & 141.389           \\ \hline
+\end{tabular}
+\caption{Time needed to produce  all query answers in ms.}
+\end{table}
 
+\end{enumerate}
+\newpage
+
+\section*{Appendix 2: result from the school server}
+\begin{enumerate}
+	\item Hardware and Software Configuration:
+
+\begin{enumerate}
+
+\item Processor Name:	 Intel(R) Xeon(R) CPU E5-2660 v3 @ 2.60GHz
+
+\item Processor Speed:	2.6 GHz
+
+\item Number of Processors:	1
+
+\item Total Number of Cores:	4
+
+\item L2 Cache (per Core):	1 MiB
+
+\item L3 Cache:	100 MiB
+
+\item Memory:	32	 GB
+
+\item Operating System: Fedora 34 (Workstation Edition)
+
+\item Compiler Version: g++ (GCC) 11.2.1 20220127 (Red Hat 11.2.1-9)
+
+\end{enumerate}
+
+\begin{table}[H]\centering
+\begin{tabular}{|l|l|l|l|}
+\hline
+                   & LUBM-001-mat (ms) & LUBM-010-mat (ms) & LUBM-100-mat (ms)\\ \hline
+Load \& Index Time & 307.796         & 4161.18        & 52040.1        \\ \hline
+\end{tabular}
+\caption{Time needed to load and index the data in ms.}
+\end{table}
+
+
+\begin{table}[H]\centering
+\begin{tabular}{|l|l|l|l|}
+\hline
+    & LUBM-001-mat (ms) & LUBM-010-mat (ms) & LUBM-100-mat (ms) \\ \hline
+q1  & 0.0098            & 0.0156            & 0.0225            \\ \hline
+q2  & 3.1313            & 62.3343           & 643.443           \\ \hline
+q3  & 0.0103            & 0.0175            & 0.0233            \\ \hline
+q4  & 0.0845            & 0.1269            & 0.1621            \\ \hline
+q5  & 0.2518            & 0.4658            & 0.5873            \\ \hline
+q6  & 0.6214             & 15.222           & 165.524           \\ \hline
+q7  & 0.0419            & 0.0622            & 0.0907            \\ \hline
+q8  & 6.0605            & 8.9462           & 11.8175           \\ \hline
+q9  & 4.1269            & 78.3835           & 1003.39           \\ \hline
+q10 & 0.0071            & 0.0139            & 0.0183            \\ \hline
+q11 & 0.0753            & 0.1217            & 0.147            \\ \hline
+q12 & 0.0273            & 0.3186            & 0.4493            \\ \hline
+q13 & 0.0038            & 0.0246            & 0.3449            \\ \hline
+q14 & 0.5543            & 9.7041           & 103.243           \\ \hline
+\end{tabular}
+\caption{Time needed to produce  all query answers in ms.}
+\end{table}
+
+\end{enumerate}
 
 
 

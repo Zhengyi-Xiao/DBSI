@@ -48,7 +48,7 @@ inline void RDF_index::update_Isp(struct Triple t){
             (*this->table)[this->num_element - 1][Nsp] = (*this->table)[(*this->Isp)[t].idx - 1][Nsp];
         (*this->table)[(*this->Isp)[t].idx - 1][Nsp] = this->num_element - 1;
     }
-    else{ // special case when only the head of the linked list exists, in such case, makes the new node the next
+    else{ // special case when the head of the linked list does not exist
         (*this->Isp)[t].idx = this->num_element;
         (*this->table)[this->num_element - 1][Nsp] = (*this->Is)[t.s] - 1;
         (*this->Is)[t.s] = this->num_element;
@@ -69,7 +69,7 @@ inline void RDF_index::update_Iop(struct Triple t){
             (*this->table)[this->num_element - 1][Nop] = (*this->table)[(*this->Iop)[t].idx - 1][Nop];
         (*this->table)[(*this->Iop)[t].idx - 1][Nop] = this->num_element - 1;
     }
-    else{ // special case when only the head of the linked list exists, in such case, makes the new node the next
+    else{ // special case when the head of the linked list does not exist
         (*this->Iop)[t].idx = this->num_element;
         (*this->table)[this->num_element - 1][Nop] = (*this->Io)[t.o] - 1;
         (*this->Io)[t.o] = this->num_element;
