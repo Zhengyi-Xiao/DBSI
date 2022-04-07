@@ -66,9 +66,9 @@ Your degree: MSc Advanced Computer Science
 	\item 
 	The data structure in this paper is a six-column triple table. The subject, predicate, and object of a triple are encoded as integers in the first three columns, $R_s$, $R_p$, and $R_o$, respectively. Conceptually, there are three linked lists, an $sp$-list that connects all triples with the same $R_s$ grouped by $R_p$, an $op$-list that associates all triple with the same $R_o$ grouped by $R_p$, and a $p$-list that relates all triples with the same $R_p$ without any grouping. In the table, the last three columns, $N_{sp}$, $N_{op}$, and $N_p$, store the next-pointes, which are going to be the row numbers in the triple table in the actual implementation.
 	
-	Apart from the table, six index maps are also maintained. $I_s$, $I_p$, and $I_o$ store the head of the $sp$-list, $p$-list, and $op$-list, respectively. $I_{sp}$ maps $s$ and $p$ to the first occurrence of the triple with the same $s$ and $p$ in the $sp$-list. So does $I_{op}$. $I_{spo}$ stores the row number of each triple in the table. 
+	Apart from the table, six index maps are also maintained. $I_s$, $I_p$, and $I_o$ store the head of the $s$-list, $p$-list, and $o$-list for each different $s$, $p$, and $o$, respectively. $I_{sp}$ maps to the head of the $sp$-list for each $(s,p)$ tuple. So does $I_{op}$. $I_{spo}$ stores the row number of each triple in the table and we use this to check existence of a triple in the database.
 	
-	\item {\large A}DD(Triple $t$) consists of two parts; first, append a new row to the end of the RDF-index table, and second, associates the new row with all six index maps and alters the pointer columns, $N_{sp}$, $N_{op}$, and $N_p$, to point to the correct row.
+	\item {\large A}DD(Triple $t$) consists of two parts; first, append a new row to the end of the RDF-index table, and second, update all six index maps and alters the next-pointer columns, $N_{sp}$, $N_{op}$, and $N_p$ accordingly.
 	
 	Since there is no need to worry about the concurrency in our setting, the RDF-index table is maintained as a fixed size vector of int list of size 6 with each position stands for different columns. Therefore, for each time we add a triple into the table, we simply append it to the last. However, if a triple is already in the $I_{spo}$ map, we skip it. When the size reaches its limit, the entire table will resize. 
 
@@ -92,7 +92,10 @@ Your degree: MSc Advanced Computer Science
 \end{algorithmic}
 \end{algorithm}
 
-The columns, $N_{sp}$, $N_{op}$, and $N_p$, are maintained in a linked-list-like manner and are updated simultaneously with the index maps. Take $N_{op}$ for example, if a new triple, $T_{new}$, does not appear in the $I_o$ and $I_{op}$, it means that  $T_{new}$ is a triple with a brand new $T_{new}.s$ and $T_{new}.p$. Therefore, we insert $T_{new}$ into the index map $I_o$ and $I_{op}$ (case1). If we found a $T$ with $T.o = T_{new}.o$ and $T.p = T_{new}.p$, then we insert $T_{new}$ after $T$, and point the next of $T_{new}$ to the original next of the $T$ (case2). A special case is that when there is not a head of $I_{op}$ for $T$, we will make $T$ the haed of $I_{o}$ and $T.N_{op}$ point to the original start of $I_{op}$ and $I_o$, which  is handled in case 3 of the Algorithm \eqref{alg:updateIop}. The case of $N_{sp}$ and $N_p$ is similar.
+The columns, $N_{sp}$, $N_{op}$, and $N_p$, are maintained in a linked-list-like manner and are updated simultaneously with the index maps. The central idea is that we always append the new triple right after the head of the list, but there are two corner cases we need to discuss.
+
+
+Take $N_{op}$ for example, if a new triple, $T_{new}$, does not appear in  $I_o$ and $I_{op}$, it means that  $T_{new}$ is a triple with a brand new $o$ and $p$. Therefore, we make $T_{new}$ the head of the index map $I_o$ and $I_{op}$ (case1). If we found a $T$ with $T.o = T_{new}.o$ and $T.p = T_{new}.p$, then we insert $T_{new}$ after $T$, and point the next of $T_{new}$ to the original next of the $T$ as described in the paper (case2). A special case is that when there is not a head of $I_{op}$ for $T$, we will make $T$ the new head of $I_{o}$ and $T.N_{op}$ point to the original start of $I_{op}$ and $I_o$\footnote{When encountering a new value, we always want to make the new value the head of the index map instead of appending it to the end, because appending to the end takes a lot of time in traversing the linked list.}, which is handled in case 3 of the Algorithm \eqref{alg:updateIop}. The case of $N_{sp}$ and $N_p$ is similar.
 
 \begin{algorithm}[H]
 \caption{Update $I_{op}$($T_{new}$)}\label{alg:updateIop}
@@ -117,7 +120,7 @@ The columns, $N_{sp}$, $N_{op}$, and $N_p$, are maintained in a linked-list-like
 \item 
 
  
-Let $t = \langle s, p, o\rangle$ be a triple pattern and $X$, $Y$, and $Z$ be free variables. There are two inputs for EVALUATE; $t$, the matching pattern, and \textit{index}, the previous row number. There are also two outputs, $t'$, the answer to the match pattern, \textit{index}, the current row number. The index are usually the pointer (row number) to the next triple, but there are two sentinels; \textit{EndOfNode} will tell the caller there is no more next triple to search and \textit{EndSearch} stands for an illegal search. The general framework is shown in Algorithm \eqref{alg:evaluate}.
+Let $t = \langle s, p, o\rangle$ be a triple pattern and $X$, $Y$, and $Z$ be free variables. There are two inputs for EVALUATE; $t$, the matching pattern, and \textit{index}, the previous row number. There are also two outputs, $t'$, the answer to the matched pattern, \textit{index}, the current row number. The index are usually the pointer (row number) to the next triple, but there are two sentinels; \textit{EndOfNode} will tell the caller there is no more next triple to search and \textit{EndSearch} stands for an illegal search. The general framework is shown in Algorithm \eqref{alg:evaluate}.
 
 \begin{algorithm}[H]
 \caption{Framework}\label{alg:evaluate}
@@ -129,6 +132,8 @@ Let $t = \langle s, p, o\rangle$ be a triple pattern and $X$, $Y$, and $Z$ be fr
 
 \end{algorithmic}
 \end{algorithm}
+
+In the while loop, it will return matched pattern one by one until \textit{EndOfNode} or \textit{EndSearch}  is returned by Evaluate(.).
 
 Inside EVALUATE, there are four categories, from no free variable to three variables. 
 
@@ -279,7 +284,7 @@ It is troublesome because it will always take the first unprocessed triple patte
 \end{align*}
 will produce the plan $\langle X, 1, 2\rangle \mapsto \langle Y, 2, 3\rangle \mapsto \langle X, 4, Y\rangle$ because even after we replace the $X$ in $\langle X, 4, Y\rangle$, this triple pattern still has a higher selectivity than $\langle Y, 2, 3\rangle$. Therefore, this plan will create an unnecessary cross product, and I believe the criteria \eqref{criteria} meant choosing the triple pattern that has the lowest selectivity and includes some variables that are in the processed patterns. Thus, I made some modifications to the algorithm, and it will 1) as long as an unprocessed pattern has a variable that is processed, we will always consider this pattern and 2) if this pattern has lower selectivity than the previous one, we choose this pattern as the best triple. With this modification, the plan becomes $\langle X, 1, 2\rangle \mapsto \langle X, 4, Y\rangle \mapsto \langle Y, 2, 3\rangle$. 
 
-Thirdly, there are some cases that $|\langle X, 1, 2\rangle| = 10,000$ but $|\langle Y, 2, 3\rangle| = 10$. If we ignore the size of the pattern, we might produce a lot of unnecessary joins, but we can store this information while we are updating $I_{op}$. Therefore, I also record the size of $I_{op}[op]$ and $I_{sp}[sp]$, and we choose the best triple pattern based on both selectivity and size. Our final query plan is $\langle Y, 2, 3\rangle \mapsto \langle X, 4, Y\rangle \mapsto \langle X, 1, 2\rangle$, which is the most optimal plan. Notice that only $I_{op}$ and $I_{sp}$ are considered because they are the most common cases, and recording the size of other index maps would produce overhead in indexing. Since the size of $I_{op}[t]$ and $I_{sp}[t]$ can be recored while we are inserting triple, the cost of maintaining the size is negligible\footnote{There are many tricks to save memory. For example, let's say $I_{sp}$ is an unordered\_map$<$int, int$>$, where the first int is the hash key and the second int is the index of row number. For a table size smaller than $2^{24}$ rows, we can use the higher $7$ bits to store the size and lower 24 bits to store the index. Other trick might apply also.}. 
+Thirdly, there are some cases that $|\langle X, 1, 2\rangle| = 10,000$ but $|\langle Y, 2, 3\rangle| = 10$. If we ignore the size of the pattern, we might produce a lot of unnecessary joins, but we can store this information while we are updating $I_{op}$. Therefore, I also record the size of $I_{op}[op]$ and $I_{sp}[sp]$, and we choose the best triple pattern based on both selectivity and size. Our final query plan is $\langle Y, 2, 3\rangle \mapsto \langle X, 4, Y\rangle \mapsto \langle X, 1, 2\rangle$, which is the most optimal plan. Notice that only $I_{op}$ and $I_{sp}$ are considered because they are the most common cases. Moreover, since the size of $I_{op}[t]$ and $I_{sp}[t]$ can be recored while we are inserting triple, the cost of maintaining the size is negligible\footnote{There are many tricks to save memory. For example, let's say $I_{sp}$ is an unordered\_map$<$int, int$>$, where the first int is the hash key and the second int is the index of row number. For a table size smaller than $2^{24}$ rows, we can use the higher $7$ bits to store the size and lower 24 bits to store the index. Other trick might apply also.}. 
 
 Lastly, the original query plan was based on the following precedence relation $\prec$ on selectivity of triple patterns: 
 \begin{equation*}
@@ -335,7 +340,7 @@ The pseudo-code goes as the following.
 \end{algorithm}
 
 
-From Table 1, we see a significant improvement in most of the queries. The testing protocol is the same as the one in question 3. To do the test, uncomment lines 20-25 in query\_planner.cpp and comment lines 26-53 and MAKE TEST. The analysis of the result is included in 3.c.
+From Table 1, we see a significant improvement in all queries. The testing protocol is the same as the one in question 3. To do the test, uncomment lines 20-25 in query\_planner.cpp and comment lines 26-53 and MAKE TEST. The analysis is included in 3.c.
 
 \begin{table}[]\centering
 \begin{tabular}{|l|l|l|l|}
@@ -361,11 +366,11 @@ q14 & 0.2384            & 0.1947              & 122.444787       \\ \hline
 
 \item The component for parsing and importing Turtle files.
 
-This part is included in Turtle\_handler.cpp. 
+This part is included in Turtle\_handler.cpp. Some corner cases are handled and it achieves what the question asks. 
 
 \item The parser for SPARQL queries
 
-This part is included in query\_parser.cpp. 
+This part is included in query\_parser.cpp. Some corner cases are handled and it achieves what the question asks. 
 
 \item The component implementing the command line
 
@@ -398,7 +403,7 @@ This part is included in interface.cpp.
 
 \item 
 
-We set a timeout if one instruction takes more than 3 minutes. The following protocol can be found in experiment.cpp. If you want to run the load test, fill in the correct path to the data and uncomment line 102. It will take about 10 minutes to run. 
+We set a timeout if one instruction takes more than 3 minutes. The following protocol is implemented in experiment.cpp. If you want to run the load test, fill in the correct path to the data. It will take about 5-10 minutes to run. 
 
 Loading Data Test Protocol:
 
@@ -414,7 +419,7 @@ Loading Data Test Protocol:
 \item Go back to step ii repeat this process for 10 times.
 \item Take the average. 
 \end{enumerate}
-To eliminate the cache effect, I load 3 datasets one by one for 10 times instead of running a single dataset for 10 times. This will flush most of caches. Also, I should play my phone and don't touch my laptop while running.
+To eliminate the cache effect, I load 3 datasets one by one for 10 times instead of running a single dataset for 10 times. This will flush most of caches. Also, I should play my phone and don't touch my laptop while running. The protocol is implemented the function load\_test in experiment.cpp.
 
 \item 
 We choose COUNT instead of SELECT and for each query. We set a timeout if one instruction takes more than 3 minutes. 
@@ -425,14 +430,13 @@ Loading Data Test Protocol:
 \begin{enumerate}
 \item *Restart computer* and turn off all irrelevant applications.
 \item Start a clean terminal.
-\item MAKE all and run the output file.
 \item Load one dataset. 
 \item Run 14 queries one by one and markdown the time. 
 \item Go back to the step v and  repeat 10 times. 
 \item Take the average. 
 \end{enumerate}
 
-To avoid the cache effect, I run 14 queries one by one for 10 times instead of running a single queries for 10 times.
+To avoid the cache effect, I run 14 queries one by one for 10 times instead of running a single queries for 10 times. The protocol is implemented the function query\_test in experiment.cpp.
 
 \end{enumerate}
 
