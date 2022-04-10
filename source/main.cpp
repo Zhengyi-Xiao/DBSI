@@ -15,7 +15,6 @@ std::vector<std::string> split(std::string s){
 }
 
 int main() {
-
     Interface* interface = new Interface();
             
     std::vector<std::string> token_input;
@@ -28,9 +27,10 @@ int main() {
             continue;
         }
         token_input = split(input);
-
-        if(token_input[0] == "QUIT")
+        if(token_input[0] == "QUIT"){
+            delete interface;
             return 0;
+        }
         else{
             if(token_input[0] == "LOAD"){
                 interface->LOAD(token_input);
@@ -45,7 +45,6 @@ int main() {
                 std::cout << "command \"" << input << "\" not known" << std::endl;
             }
         }
-        
         std::cout << "> ";
     }
     return 0;

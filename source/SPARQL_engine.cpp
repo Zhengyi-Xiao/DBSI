@@ -12,7 +12,9 @@ void SPARQL_engine::join(Query_parser* query){
     // print the header (variable names) for join
     if(this->query->output){
         for(auto kv : *this->query->Voutput){
-            std::cout << kv.first << "    ";
+            // I found there are some issues with printing 
+            // tab on my mac (not on the server), so I enforce it to be 4 spaces.         
+            std::cout << kv.first << "    "; 
         } 
         std::cout << std::endl;
     }

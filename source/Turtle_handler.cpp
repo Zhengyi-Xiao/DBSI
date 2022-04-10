@@ -19,7 +19,7 @@ int Turtle_handler::load(std::string file_name){
 
     fp = fopen(c_file_name, "r");
     if (fp == NULL){
-        std::cout << "Unable to open the file" << file_name << std::endl;
+        std::cout << "Unable to open the file: " << file_name << std::endl;
         return FAIL;
     }
 
